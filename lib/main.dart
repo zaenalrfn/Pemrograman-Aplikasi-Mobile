@@ -1,56 +1,18 @@
-import 'package:absensi_mahasiswa/ui/pages/onboarding_page.dart';
 import 'package:flutter/material.dart';
+import 'login_page.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Onboarding App',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.purple,
-        fontFamily: 'Poppins',
-      ),
-      // Initial route
-      initialRoute: '/',
-      routes: {
-        '/': (context) => OnboardingPage(),
-        '/home': (context) => HomePage(),
-      },
-    );
-  }
-}
+  const MyApp({super.key});
 
-// Halaman Home (contoh)
-class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Home Page'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.check_circle, size: 80, color: Colors.green),
-            SizedBox(height: 20),
-            Text(
-              'Onboarding Selesai!',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 10),
-            Text('Selamat datang di aplikasi'),
-          ],
-        ),
-      ),
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: LoginPage(),
     );
   }
 }
