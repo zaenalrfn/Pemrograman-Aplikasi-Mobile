@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'riwayat_page.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -16,10 +17,7 @@ class LoginPage extends StatelessWidget {
             const SizedBox(height: 40),
 
             // Avatar putih
-            const CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.white,
-            ),
+            const CircleAvatar(radius: 50, backgroundColor: Colors.white),
             const SizedBox(height: 40),
 
             // Bagian bawah putih melengkung
@@ -33,7 +31,10 @@ class LoginPage extends StatelessWidget {
                     topRight: Radius.circular(40),
                   ),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 32,
+                ),
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -61,7 +62,9 @@ class LoginPage extends StatelessWidget {
                           filled: true,
                           fillColor: const Color(0xFFF5F5FF),
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 14),
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
@@ -79,7 +82,9 @@ class LoginPage extends StatelessWidget {
                           filled: true,
                           fillColor: const Color(0xFFF5F5FF),
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 14),
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
@@ -99,7 +104,14 @@ class LoginPage extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => RiwayatPage(),
+                              ),
+                            );
+                          },
                           child: const Text(
                             "Masuk",
                             style: TextStyle(fontSize: 16),
