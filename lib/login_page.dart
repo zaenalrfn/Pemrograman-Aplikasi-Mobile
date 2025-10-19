@@ -1,3 +1,4 @@
+import 'package:absensi_mahasiswa/beranda_page.dart';
 import 'package:flutter/material.dart';
 import 'riwayat_page.dart';
 
@@ -108,7 +109,7 @@ class LoginPage extends StatelessWidget {
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => RiwayatPage(),
+                                builder: (context) => BerandaPage(),
                               ),
                             );
                           },

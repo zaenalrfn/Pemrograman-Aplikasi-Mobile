@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'widgets/custom_button_nav.dart';
+
 
 class RiwayatPage extends StatelessWidget {
   const RiwayatPage({super.key});
@@ -140,29 +142,26 @@ class RiwayatPage extends StatelessWidget {
       ),
 
       // Bottom Navigation
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 2, // tab Riwayat aktif
-        selectedItemColor: const Color(0xFF9B7AFD),
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_rounded),
-            label: "Beranda",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_scanner_rounded),
-            label: "Scan",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_rounded),
-            label: "Riwayat",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_rounded),
-            label: "Profil",
-          ),
-        ],
+      bottomNavigationBar: CustomBottomNav(
+        currentIndex: 2, // posisi tab aktif
+        onTap: (index) {
+          // logika pindah halaman
+          switch (index) {
+            case 0:
+              Navigator.pushReplacementNamed(context, '/beranda');
+              break;
+            case 1:
+              Navigator.pushReplacementNamed(context, '/scan');
+              break;
+            case 2:
+              // Riwayat, tidak perlu pindah
+              Navigator.pushReplacementNamed(context, '/riwayat');
+              break;
+            case 3:
+              Navigator.pushReplacementNamed(context, '/profil');
+              break;
+          }
+        },
       ),
     );
   }
