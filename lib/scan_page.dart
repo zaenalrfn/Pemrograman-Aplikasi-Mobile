@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'widgets/custom_button_nav.dart';
 import '../data/dummy_scan_data.dart';
+import 'camera_scan_page.dart';
+import '../services/geofence_service.dart';
+
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key});
 
@@ -10,11 +13,139 @@ class ScanPage extends StatefulWidget {
 
 class _ScanPageState extends State<ScanPage> {
   late Future<ScanData> scanDataFuture;
+  bool _isCheckingLocation = false;
 
   @override
   void initState() {
     super.initState();
     scanDataFuture = fetchScanData(); // ambil data dummy
+  }
+
+  // Fungsi untuk cek lokasi dan buka kamera
+  Future<void> _handleAbsensi() async {
+    setState(() {
+      _isCheckingLocation = true;
+    });
+
+    // Cek apakah user berada di lokasi yang diizinkan
+    GeofenceResult result = await GeofenceService.isWithinAllowedArea();
+
+    setState(() {
+      _isCheckingLocation = false;
+    });
+
+    if (result.isAllowed) {
+      // Lokasi valid, buka kamera
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CameraScanPage()),
+        );
+      }
+    } else {
+      // Lokasi tidak valid, tampilkan dialog error
+      _showLocationErrorDialog(result.message, result.distance);
+    }
+  }
+
+  // Dialog error lokasi
+  void _showLocationErrorDialog(String message, double? distance) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.location_off,
+                  size: 30,
+                  color: Colors.red.shade400,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Lokasi Tidak Valid',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2F2B52),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF2F2B52),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: const BorderSide(color: Color(0xFF7165E0)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Tutup',
+                        style: TextStyle(
+                          color: Color(0xFF7165E0),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        await GeofenceService.openLocationSettings();
+                        await GeofenceService.openAppSettings(); // buka app settings juga
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF7165E0),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Pengaturan',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -46,10 +177,7 @@ class _ScanPageState extends State<ScanPage> {
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFF7165E0),
-                        Color(0xFF9D8EF7),
-                      ],
+                      colors: [Color(0xFF7165E0), Color(0xFF9D8EF7)],
                     ),
                     borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(30),
@@ -58,13 +186,16 @@ class _ScanPageState extends State<ScanPage> {
                   ),
                   child: SafeArea(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
                       child: Stack(
-                        clipBehavior: Clip.none, // biar card boleh keluar dari container
+                        clipBehavior: Clip.none,
                         children: [
                           // Card putih keluar sedikit ke bawah
                           Transform.translate(
-                            offset: const Offset(0, 50), // geser ke bawah 40px
+                            offset: const Offset(0, 50),
                             child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
@@ -72,7 +203,9 @@ class _ScanPageState extends State<ScanPage> {
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF7165E0).withOpacity(0.2),
+                                    color: const Color(
+                                      0xFF7165E0,
+                                    ).withOpacity(0.2),
                                     blurRadius: 20,
                                     spreadRadius: 1,
                                     offset: const Offset(0, 8),
@@ -84,25 +217,32 @@ class _ScanPageState extends State<ScanPage> {
                                 children: [
                                   // Header nama mata kuliah + status sesi
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         data.courseName,
                                         style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w500,
-                                          color: Color(0xFF2F2B52)
+                                          color: Color(0xFF2F2B52),
                                         ),
                                       ),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 6),
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF1EDFF),
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         child: Text(
-                                          data.sessionActive ? "Sesi Aktif" : "Tidak Aktif",
+                                          data.sessionActive
+                                              ? "Sesi Aktif"
+                                              : "Tidak Aktif",
                                           style: const TextStyle(
                                             color: Color(0xFF6A5AE0),
                                             fontSize: 12,
@@ -115,24 +255,41 @@ class _ScanPageState extends State<ScanPage> {
                                   const SizedBox(height: 10),
                                   Text(
                                     "${data.className} • ${data.lecturer} • ${data.sks} SKS",
-                                    style: const TextStyle(fontSize: 12, color: Color(0xFF2F2B52)),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF2F2B52),
+                                    ),
                                   ),
                                   const SizedBox(height: 10),
                                   Row(
                                     children: [
-                                      const Icon(Icons.access_time,
-                                          size: 16, color: Color(0xFF2F2B52)),
+                                      const Icon(
+                                        Icons.access_time,
+                                        size: 16,
+                                        color: Color(0xFF2F2B52),
+                                      ),
                                       const SizedBox(width: 6),
-                                      Text(data.time,
-                                          style: const TextStyle(
-                                              fontSize: 12, color: Color(0xFF2F2B52))),
+                                      Text(
+                                        data.time,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF2F2B52),
+                                        ),
+                                      ),
                                       const SizedBox(width: 16),
-                                      const Icon(Icons.location_on_outlined,
-                                          size: 16, color: Color(0xFF2F2B52)),
+                                      const Icon(
+                                        Icons.location_on_outlined,
+                                        size: 16,
+                                        color: Color(0xFF2F2B52),
+                                      ),
                                       const SizedBox(width: 6),
-                                      Text(data.location,
-                                          style: const TextStyle(
-                                              fontSize: 12, color: Color(0xFF2F2B52))),
+                                      Text(
+                                        data.location,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF2F2B52),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -144,7 +301,6 @@ class _ScanPageState extends State<ScanPage> {
                     ),
                   ),
                 ),
-
 
                 // Konten bawah
                 Padding(
@@ -172,42 +328,64 @@ class _ScanPageState extends State<ScanPage> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF2F2B52)
+                          color: Color(0xFF2F2B52),
                         ),
                       ),
                       const SizedBox(height: 12),
                       const Text(
                         "Pastikan wajah Anda terlihat jelas dan Anda\nberada di area kelas yang benar",
                         textAlign: TextAlign.center,
-                        style:
-                            TextStyle(fontSize: 14, color: Color(0xFF2F2B52), height: 1.5),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF2F2B52),
+                          height: 1.5,
+                        ),
                       ),
                       const SizedBox(height: 30),
                       _buildTipItem("Pencahayaan cukup terang"),
                       const SizedBox(height: 12),
-                      _buildTipItem("Tidak menggunakan masker atau\nkacamata hitam"),
+                      _buildTipItem(
+                        "Tidak menggunakan masker atau\nkacamata hitam",
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTipItem(
+                        "Berada di area kelas yang sesuai",
+                        icon: Icons.location_on,
+                      ),
                       const SizedBox(height: 40),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            // fungsi absensi
-                          },
+                          onPressed: _isCheckingLocation
+                              ? null
+                              : _handleAbsensi,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF7165E0),
+                            disabledBackgroundColor: Colors.grey.shade300,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
-                            "Absensi Sekarang",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                          child: _isCheckingLocation
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Text(
+                                  "Absensi Sekarang",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                         ),
                       ),
                     ],
@@ -239,7 +417,7 @@ class _ScanPageState extends State<ScanPage> {
     );
   }
 
-  Widget _buildTipItem(String text) {
+  Widget _buildTipItem(String text, {IconData? icon}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
