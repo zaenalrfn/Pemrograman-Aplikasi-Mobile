@@ -1,22 +1,85 @@
 import 'package:flutter/material.dart';
-import 'riwayat_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'beranda_page.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
+  State<LoginPage> createState() => _LoginPageState();
+}
 
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  bool isLoading = false;
+
+  final supabase = Supabase.instance.client;
+
+  Future<void> _login() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      _showMessage("Email dan password wajib diisi!");
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      final response = await supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = response.user;
+      if (user != null) {
+        // Ambil data user dari tabel public.users
+        final data = await supabase
+            .from('users')
+            .select('role_id')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (data == null) {
+          _showMessage("User tidak ditemukan di tabel users.");
+        } else if (data['role_id'] != 2) {
+          _showMessage("Hanya mahasiswa yang dapat login.");
+          await supabase.auth.signOut();
+        } else {
+          // Lolos validasi
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const BerandaPage()),
+          );
+        }
+      } else {
+        _showMessage("Gagal login, periksa email dan password.");
+      }
+    } on AuthException catch (e) {
+      _showMessage(e.message);
+    } catch (e) {
+      _showMessage("Terjadi kesalahan: $e");
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF7463F0), // ungu bagian atas
+      backgroundColor: const Color(0xFF7463F0),
       body: SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 40),
-
-            // Avatar putih
             const CircleAvatar(radius: 50, backgroundColor: Colors.white),
             const SizedBox(height: 40),
 
@@ -104,33 +167,25 @@ class LoginPage extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => RiwayatPage(),
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            "Masuk",
-                            style: TextStyle(fontSize: 16),
-                          ),
+                          onPressed: isLoading ? null : _login,
+                          child: isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : const Text(
+                                  "Masuk",
+                                  style: TextStyle(fontSize: 16),
+                                ),
                         ),
                       ),
 
                       const SizedBox(height: 16),
-
-                      // Lupa Kata Sandi
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text("Lupa Kata Sandi? "),
                           TextButton(
                             onPressed: () {},
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                            ),
                             child: const Text(
                               "Bantuan Masuk",
                               style: TextStyle(color: Color(0xFF7463F0)),
