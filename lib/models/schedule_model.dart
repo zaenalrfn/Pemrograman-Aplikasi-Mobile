@@ -25,6 +25,7 @@ class CourseModel {
   final String? jamMulai;
   final String? jamSelesai;
   final int? semester;
+  final String? ruangan;
   final LecturerModel? lecturer;
 
   CourseModel({
@@ -37,6 +38,7 @@ class CourseModel {
     this.jamMulai,
     this.jamSelesai,
     this.semester,
+    this.ruangan,
     this.lecturer,
   });
 

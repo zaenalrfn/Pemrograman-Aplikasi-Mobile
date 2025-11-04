@@ -1,5 +1,8 @@
+import 'package:absensi_mahasiswa/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/user_model.dart';
 import 'beranda_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -38,7 +41,7 @@ class _LoginPageState extends State<LoginPage> {
         // Ambil data user dari tabel public.users
         final data = await supabase
             .from('users')
-            .select('role_id')
+            .select('id, name, email, role_id')
             .eq('id', user.id)
             .maybeSingle();
 
@@ -48,6 +51,11 @@ class _LoginPageState extends State<LoginPage> {
           _showMessage("Hanya mahasiswa yang dapat login.");
           await supabase.auth.signOut();
         } else {
+          // provider auth
+          final authProvider = context.read<AuthProvider>();
+authProvider.setUser(UserModel.fromMap(data));
+final userFromProvider = authProvider.user;
+print("Current user ID: ${userFromProvider?.id}");
           // Lolos validasi
           Navigator.pushReplacement(
             context,
