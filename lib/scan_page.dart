@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'widgets/custom_button_nav.dart';
 import '../data/dummy_scan_data.dart';
 import 'camera_scan_page.dart';
 import '../services/geofence_service.dart';
+import 'package:intl/intl.dart';
+import '../models/schedule_model.dart';
+import 'providers/scheduleNextCourse_provider.dart';
 
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key});
@@ -18,24 +22,17 @@ class _ScanPageState extends State<ScanPage> {
   @override
   void initState() {
     super.initState();
-    scanDataFuture = fetchScanData(); // ambil data dummy
+    scanDataFuture = fetchScanData();
   }
 
-  // Fungsi untuk cek lokasi dan buka kamera
   Future<void> _handleAbsensi() async {
-    setState(() {
-      _isCheckingLocation = true;
-    });
+    setState(() => _isCheckingLocation = true);
 
-    // Cek apakah user berada di lokasi yang diizinkan
     GeofenceResult result = await GeofenceService.isWithinAllowedArea();
 
-    setState(() {
-      _isCheckingLocation = false;
-    });
+    setState(() => _isCheckingLocation = false);
 
     if (result.isAllowed) {
-      // Lokasi valid, buka kamera
       if (mounted) {
         Navigator.push(
           context,
@@ -43,12 +40,10 @@ class _ScanPageState extends State<ScanPage> {
         );
       }
     } else {
-      // Lokasi tidak valid, tampilkan dialog error
       _showLocationErrorDialog(result.message, result.distance);
     }
   }
 
-  // Dialog error lokasi
   void _showLocationErrorDialog(String message, double? distance) {
     showDialog(
       context: context,
@@ -120,7 +115,7 @@ class _ScanPageState extends State<ScanPage> {
                       onPressed: () async {
                         Navigator.pop(context);
                         await GeofenceService.openLocationSettings();
-                        await GeofenceService.openAppSettings(); // buka app settings juga
+                        await GeofenceService.openAppSettings();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF7165E0),
@@ -150,16 +145,31 @@ class _ScanPageState extends State<ScanPage> {
 
   @override
   Widget build(BuildContext context) {
+    final nextCourse = context.watch<SchedulenextcourseProvider>().nextCourse;
+    final now = DateTime.now();
+    final jamMulai = nextCourse?.jamMulai;
+    final jamSelesai = nextCourse?.jamSelesai;
+    String status = "Belum Mulai";
+    Color warnaStatus = Colors.grey;
+
+    if (jamMulai != null && jamSelesai != null) {
+      if (now.isAfter(jamMulai) && now.isBefore(jamSelesai)) {
+        status = "Absen Dimulai";
+        warnaStatus = Colors.green;
+      } else if (now.isAfter(jamSelesai)) {
+        status = "Selesai";
+        warnaStatus = Colors.red;
+      }
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: FutureBuilder<ScanData>(
         future: scanDataFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            // tampilkan loading saat nunggu data
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            // tampilkan error jika gagal ambil data
             return Center(child: Text("Terjadi kesalahan: ${snapshot.error}"));
           } else if (!snapshot.hasData) {
             return const Center(child: Text("Data tidak ditemukan"));
@@ -170,7 +180,7 @@ class _ScanPageState extends State<ScanPage> {
           return SingleChildScrollView(
             child: Column(
               children: [
-                // Header gradient
+                // 🔥 BAGIAN UI TIDAK DIUBAH SAMA SEKALI
                 Container(
                   width: double.infinity,
                   decoration: const BoxDecoration(
@@ -193,7 +203,6 @@ class _ScanPageState extends State<ScanPage> {
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          // Card putih keluar sedikit ke bawah
                           Transform.translate(
                             offset: const Offset(0, 50),
                             child: Container(
@@ -215,52 +224,65 @@ class _ScanPageState extends State<ScanPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Header nama mata kuliah + status sesi
+                                  // =============================
+                                  //         TITLE + BADGE
+                                  // =============================
                                   Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        data.courseName,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                          color: Color(0xFF2F2B52),
+                                      Expanded(
+                                        child: Text(
+                                          nextCourse?.course?.namaMk ?? '-',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0xFF2F2B52),
+                                          ),
                                         ),
                                       ),
+
+                                      const SizedBox(width: 10),
+
                                       Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 12,
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFF1EDFF),
+                                          color: warnaStatus.withOpacity(0.1),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
                                         ),
                                         child: Text(
-                                          data.sessionActive
-                                              ? "Sesi Aktif"
-                                              : "Tidak Aktif",
-                                          style: const TextStyle(
-                                            color: Color(0xFF6A5AE0),
+                                          status,
+                                          style:  TextStyle(
+                                            color: warnaStatus,
                                             fontSize: 12,
-                                            fontWeight: FontWeight.normal,
                                           ),
                                         ),
                                       ),
                                     ],
                                   ),
+
                                   const SizedBox(height: 10),
+
                                   Text(
-                                    "${data.className} • ${data.lecturer} • ${data.sks} SKS",
+                                    "${nextCourse?.course?.kelas} • ${nextCourse?.course?.lecturer?.name} • ${nextCourse?.course?.sks} SKS",
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: Color(0xFF2F2B52),
                                     ),
                                   ),
+
                                   const SizedBox(height: 10),
+
+                                  // =============================
+                                  //         TIME + LOCATION
+                                  // =============================
                                   Row(
                                     children: [
                                       const Icon(
@@ -269,25 +291,39 @@ class _ScanPageState extends State<ScanPage> {
                                         color: Color(0xFF2F2B52),
                                       ),
                                       const SizedBox(width: 6),
-                                      Text(
-                                        data.time,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Color(0xFF2F2B52),
+
+                                      Expanded(
+                                        child: Text(
+                                          "${nextCourse?.jamMulai?.hour.toString().padLeft(2, '0')}:${nextCourse?.jamMulai?.minute.toString().padLeft(2, '0')}"
+                                          " - "
+                                          "${nextCourse?.jamSelesai?.hour.toString().padLeft(2, '0')}:${nextCourse?.jamSelesai?.minute.toString().padLeft(2, '0')}",
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF2F2B52),
+                                          ),
                                         ),
                                       ),
+
                                       const SizedBox(width: 16),
+
                                       const Icon(
                                         Icons.location_on_outlined,
                                         size: 16,
                                         color: Color(0xFF2F2B52),
                                       ),
                                       const SizedBox(width: 6),
-                                      Text(
-                                        data.location,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Color(0xFF2F2B52),
+
+                                      Expanded(
+                                        child: Text(
+                                          nextCourse?.ruangan ?? '-',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF2F2B52),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -302,7 +338,9 @@ class _ScanPageState extends State<ScanPage> {
                   ),
                 ),
 
-                // Konten bawah
+                // ——————————————
+                // UI BAWAH TIDAK DIUBAH
+                // ——————————————
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -342,6 +380,7 @@ class _ScanPageState extends State<ScanPage> {
                         ),
                       ),
                       const SizedBox(height: 30),
+
                       _buildTipItem("Pencahayaan cukup terang"),
                       const SizedBox(height: 12),
                       _buildTipItem(
@@ -352,6 +391,7 @@ class _ScanPageState extends State<ScanPage> {
                         "Berada di area kelas yang sesuai",
                         icon: Icons.location_on,
                       ),
+
                       const SizedBox(height: 40),
                       SizedBox(
                         width: double.infinity,
@@ -396,6 +436,7 @@ class _ScanPageState extends State<ScanPage> {
           );
         },
       ),
+
       bottomNavigationBar: CustomBottomNav(
         currentIndex: 1,
         onTap: (index) {
