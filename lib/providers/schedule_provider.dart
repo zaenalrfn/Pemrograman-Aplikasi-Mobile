@@ -9,10 +9,23 @@ class ScheduleProvider extends ChangeNotifier {
   bool isLoading = false;
   DateTime? lastLoadedDate;
 
+  //  Normalisasi nama hari
+  String normalizeHari(String hari) {
+    return hari
+        .toLowerCase()
+        .replaceAll("'", "")   // hilangkan apostrof
+        .replaceAll("’", "")   // hilangkan apostrof miring
+        .replaceAll("`", "")   // hilangkan backtick
+        .trim();
+  }
+
   Future<void> loadTodaySchedules(String userId, {bool forceReload = false}) async {
     final now = DateTime.now();
     final formatter = DateFormat('EEEE', 'id_ID');
     final today = formatter.format(now);
+
+    // Normalisasi hari sekarang juga
+    final todayNormalized = normalizeHari(today);
 
     // ✅ Cegah reload kalau sudah dimuat hari ini
     if (!forceReload &&
@@ -29,7 +42,8 @@ class ScheduleProvider extends ChangeNotifier {
     final allSchedules = await scheduleService.getUserSchedules(userId);
 
     final filtered = allSchedules.where((s) {
-      return s.hari?.toLowerCase() == today.toLowerCase();
+      final dbHari = normalizeHari(s.hari ?? "");
+      return dbHari == todayNormalized;
     }).toList();
 
     filtered.sort((a, b) {
@@ -44,4 +58,3 @@ class ScheduleProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
-

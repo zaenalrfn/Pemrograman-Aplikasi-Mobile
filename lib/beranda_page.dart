@@ -6,6 +6,7 @@ import '../models/user_model.dart';
 import '../models/schedule_model.dart';
 import '../services/user_service.dart';
 import '../providers/schedule_provider.dart';
+import 'providers/scheduleNextCourse_provider.dart';
 import '../widgets/custom_button_nav.dart';
 
 class BerandaPage extends StatefulWidget {
@@ -55,7 +56,7 @@ class _BerandaPageState extends State<BerandaPage> {
       'Kamis',
       "Jum'at",
       'Sabtu',
-      'Minggu'
+      'Minggu',
     ];
     return hari[weekday - 1];
   }
@@ -65,6 +66,14 @@ class _BerandaPageState extends State<BerandaPage> {
     final provider = context.watch<ScheduleProvider>();
     final todaySchedules = provider.todaySchedules;
     final nextCourse = todaySchedules.isNotEmpty ? todaySchedules.first : null;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final nextCourseProvider = Provider.of<SchedulenextcourseProvider>(
+        context,
+        listen: false,
+      );
+      nextCourseProvider.setNextCourse(nextCourse);
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
@@ -139,7 +148,10 @@ class _BerandaPageState extends State<BerandaPage> {
   // 🔹 Header
   Widget _header() {
     final name = currentUser?.name.split(' ').first ?? '';
-    final tanggal = DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(DateTime.now());
+    final tanggal = DateFormat(
+      'EEEE, dd MMMM yyyy',
+      'id_ID',
+    ).format(DateTime.now());
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -173,20 +185,19 @@ class _BerandaPageState extends State<BerandaPage> {
 
   // 🔹 Judul Jadwal
   Widget _titleJadwal() => const Row(
-        children: [
-          Icon(Icons.calendar_today_rounded,
-              color: Color(0xFF2F2B52), size: 24),
-          SizedBox(width: 14),
-          Text(
-            "Jadwal Hari Ini",
-            style: TextStyle(
-              fontSize: 20,
-              color: Color(0xFF2F2B52),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      );
+    children: [
+      Icon(Icons.calendar_today_rounded, color: Color(0xFF2F2B52), size: 24),
+      SizedBox(width: 14),
+      Text(
+        "Jadwal Hari Ini",
+        style: TextStyle(
+          fontSize: 20,
+          color: Color(0xFF2F2B52),
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    ],
+  );
 
   // 🔹 Item jadwal
   Widget _buildJadwalItem(ScheduleModel jadwal) {
@@ -205,7 +216,7 @@ class _BerandaPageState extends State<BerandaPage> {
         tombol = ElevatedButton(
           onPressed: () {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Fitur absen dimulai 🟢")),
+              const SnackBar(content: Text("Fitur absen dimulai")),
             );
           },
           style: ElevatedButton.styleFrom(
@@ -214,8 +225,10 @@ class _BerandaPageState extends State<BerandaPage> {
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          child: const Text("Mulai Absen",
-              style: TextStyle(color: Colors.white)),
+          child: const Text(
+            "Mulai Absen",
+            style: TextStyle(color: Colors.white),
+          ),
         );
       } else if (now.isAfter(jamSelesai)) {
         status = "Selesai";
@@ -257,13 +270,18 @@ class _BerandaPageState extends State<BerandaPage> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: warnaStatus.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(status,
-                    style: TextStyle(color: warnaStatus, fontSize: 12)),
+                child: Text(
+                  status,
+                  style: TextStyle(color: warnaStatus, fontSize: 12),
+                ),
               ),
             ],
           ),
@@ -278,7 +296,8 @@ class _BerandaPageState extends State<BerandaPage> {
               const Icon(Icons.access_time, size: 18, color: Color(0xFF2F2B52)),
               const SizedBox(width: 6),
               Text(
-                  "${jadwal.jamMulai?.hour.toString().padLeft(2, '0')}:${jadwal.jamMulai?.minute.toString().padLeft(2, '0')} - ${jadwal.jamSelesai?.hour.toString().padLeft(2, '0')}:${jadwal.jamSelesai?.minute.toString().padLeft(2, '0')}"),
+                "${jadwal.jamMulai?.hour.toString().padLeft(2, '0')}:${jadwal.jamMulai?.minute.toString().padLeft(2, '0')} - ${jadwal.jamSelesai?.hour.toString().padLeft(2, '0')}:${jadwal.jamSelesai?.minute.toString().padLeft(2, '0')}",
+              ),
               const SizedBox(width: 16),
               const Icon(Icons.location_on, size: 18, color: Color(0xFF2F2B52)),
               const SizedBox(width: 6),
@@ -306,13 +325,16 @@ class _BerandaPageState extends State<BerandaPage> {
           const Text(
             "Materi Kuliah Berikutnya",
             style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w500),
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 10),
-          Text(nextCourse.course?.namaMk ?? '-',
-              style: const TextStyle(color: Colors.white, fontSize: 16)),
+          Text(
+            nextCourse.course?.namaMk ?? '-',
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
           const SizedBox(height: 10),
           Row(
             children: [
