@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/custom_button_nav.dart';
 
 // Jika kamu punya file model/service sendiri, uncomment baris di bawah ini
 // import '../models/user_model.dart';
@@ -59,48 +60,24 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       
       // 5. BOTTOM NAVIGATION BAR
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF7463F0), // Ungu aktif
-          unselectedItemColor: Colors.grey.shade400,
-          currentIndex: 3, // Posisi tab Profil
-          type: BottomNavigationBarType.fixed,
-          showUnselectedLabels: true,
-          selectedFontSize: 12,
-          onTap: (index) {
-            // Logika navigasi bisa dimasukkan di sini
-             print("Tombol nav index $index ditekan");
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              label: 'Beranda',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.camera_alt_outlined),
-              label: 'Scan',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.history),
-              label: 'Riwayat',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Profil',
-            ),
-          ],
-        ),
+      bottomNavigationBar: CustomBottomNav(
+        currentIndex: 2,
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              Navigator.pushReplacementNamed(context, '/beranda');
+              break;
+            case 1:
+              Navigator.pushReplacementNamed(context, '/scan');
+              break;
+            case 2:
+              Navigator.pushReplacementNamed(context, '/riwayat');
+              break;
+            case 3:
+              Navigator.pushReplacementNamed(context, '/profil');
+              break;
+          }
+        },
       ),
     );
   }
