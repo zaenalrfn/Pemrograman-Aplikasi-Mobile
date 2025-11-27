@@ -6,7 +6,7 @@ class ScheduleService {
 
   Future<List<ScheduleModel>> getUserSchedules(String userId) async {
     final response = await supabase
-        .from('schedules')
+        .from('student_courses')
         .select('''
       *,
       courses:course_id(*,lecturers:dosen_id(*)),
