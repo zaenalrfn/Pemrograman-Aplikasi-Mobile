@@ -12,6 +12,7 @@ import 'providers/auth_provider.dart';
 
 import 'models/schedule_model.dart';
 
+import 'profil_page.dart';
 import 'beranda_page.dart';
 import 'riwayat_page.dart';
 import 'scan_page.dart';
@@ -70,8 +71,8 @@ class MyApp extends StatelessWidget {
 
           case '/profil':
             // ❗ Jika file ProfilPage belum ada → JANGAN dibuka
-            // return MaterialPageRoute(builder: (_) => const ProfilPage());
-            return null;
+            return MaterialPageRoute(builder: (_) => const ProfilePage());
+            // return null;
 
           case '/scan':
               return MaterialPageRoute(
