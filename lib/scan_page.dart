@@ -8,6 +8,10 @@ import 'package:intl/intl.dart';
 import '../models/schedule_model.dart';
 import 'providers/scheduleNextCourse_provider.dart';
 
+// tambahan import provider
+import '../providers/auth_provider.dart';
+import '../providers/schedule_provider.dart';
+
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key});
 
@@ -23,6 +27,46 @@ class _ScanPageState extends State<ScanPage> {
   void initState() {
     super.initState();
     scanDataFuture = fetchScanData();
+
+    // Pastikan nextCourse di-set saat ScanPage dibuka
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureNextCourseIsSet();
+    });
+  }
+
+  Future<void> _ensureNextCourseIsSet() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+      final nextCourseProvider = Provider.of<SchedulenextcourseProvider>(context, listen: false);
+
+      // Jika user belum dimuat, coba muat dari storage
+      if (!authProvider.isLoggedIn) {
+        await authProvider.loadUserFromStorage();
+      }
+
+      if (!authProvider.isLoggedIn) {
+        // Tidak ada user -> tidak bisa load jadwal
+        return;
+      }
+
+      // Inisialisasi ScheduleProvider dengan token (aman dipanggil berulang)
+      scheduleProvider.init(authProvider.token!);
+
+      // Jika belum ada jadwal hari ini, load
+      if (scheduleProvider.todaySchedules.isEmpty) {
+        await scheduleProvider.loadTodaySchedules(authProvider.user!.id);
+      }
+
+      // Set nextCourse di provider yang dipakai UI
+      nextCourseProvider.setNextCourse(scheduleProvider.nextSchedule);
+
+      // Pastikan UI ter-refresh
+      if (mounted) setState(() {});
+    } catch (e) {
+      // Jangan crash app — cukup debug print
+      // debugPrint('Error memastikan nextCourse di ScanPage: $e');
+    }
   }
 
   Future<void> _handleAbsensi() async {

@@ -1,3 +1,4 @@
+import 'package:absensi_mahasiswa/models/schedule_model.dart';
 import 'package:absensi_mahasiswa/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -24,12 +25,12 @@ class _RiwayatPageState extends State<RiwayatPage> {
         context.read<AttendanceProvider>().loadData(user.id);
       } else {
         // fallback kalau user belum ada
-        authProvider.loadUser().then((_) {
+        authProvider.loadUserFromStorage().then((_) {
           final newUser = authProvider.user;
           if (newUser != null && newUser.id.isNotEmpty) {
             context.read<AttendanceProvider>().loadData(newUser.id);
           } else {
-            print("User ID kosong, skip load data");
+            debugPrint("User ID kosong, skip load data");
           }
         });
       }
@@ -69,18 +70,23 @@ class _RiwayatPageState extends State<RiwayatPage> {
                             color: Color(0xFF2F2B52),
                           ),
                         ),
-                        // const SizedBox(height: 15),
+                        const SizedBox(height: 15),
 
-                        // Loop courses, bukan attendances
-                        for (var schedule in provider.schedules)
-                          _buildKehadiranCard(
-                            nama: schedule.course?.namaMk ?? '-',
-                            jadwal: _formatJadwal(schedule.course),
-                            sks: "${schedule.course?.sks ?? 0} SKS",
-                            ruang: schedule.ruangan ?? '-',
-                            persentase: "${(provider.getAttendancePercentage(schedule.course!.id) * 100).toStringAsFixed(1)}%",
-                            jumlah: "${provider.getHadirCount(schedule.course!.id)}x",
+                        // jika tidak ada course tampil pesan
+                        if (provider.schedules.isEmpty)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20),
+                              child: Text(
+                                "Belum ada mata kuliah yang diambil 😊",
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ),
                           ),
+
+                        // Loop courses
+                        for (var schedule in provider.schedules)
+                          _buildKehadiranCardFromSchedule(schedule, provider),
                       ],
                     ),
                   ),
@@ -109,35 +115,74 @@ class _RiwayatPageState extends State<RiwayatPage> {
     );
   }
 
+  Widget _buildKehadiranCardFromSchedule(
+    ScheduleModel schedule,
+    AttendanceProvider provider,
+  ) {
+    final course = schedule.course;
+    final courseId = course?.id;
+
+    // jika course null, beri fallback sederhana
+    final nama = course?.namaMk ?? '-';
+    final jadwal = _formatJadwal(course);
+    final sks = "${course?.sks ?? 0} SKS";
+    final ruang = schedule.ruangan ?? '-';
+
+    // hindari memanggil provider dengan id null
+    double percent = 0.0;
+    int hadirCount = 0;
+    if (courseId != null && courseId.isNotEmpty) {
+      percent = provider.getAttendancePercentage(courseId).clamp(0.0, 1.0);
+      hadirCount = provider.getHadirCount(courseId);
+    }
+
+    final persentaseStr = "${(percent * 100).toStringAsFixed(1)}%";
+    final jumlahStr = "${hadirCount}x";
+
+    return _buildKehadiranCard(
+      nama: nama,
+      jadwal: jadwal,
+      sks: sks,
+      ruang: ruang,
+      persentase: persentaseStr,
+      jumlah: jumlahStr,
+    );
+  }
+
   String _formatJadwal(course) {
     try {
+      if (course == null) return "-";
+
       final hari = course.hari ?? '-';
 
-      // Ambil jam mulai
       String start = '-';
       if (course.jamMulai != null) {
         if (course.jamMulai is DateTime) {
           start =
               "${course.jamMulai.hour.toString().padLeft(2, '0')}:${course.jamMulai.minute.toString().padLeft(2, '0')}";
-        } else if (course.jamMulai is String) {
-          // Asumsi format string: "HH:mm:ss" atau "HH:mm"
-          List<String> parts = (course.jamMulai as String).split(":");
+        } else {
+          final s = course.jamMulai.toString();
+          final parts = s.split(':');
           if (parts.length >= 2) {
             start = "${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}";
+          } else {
+            start = s;
           }
         }
       }
 
-      // Ambil jam selesai
       String end = '-';
       if (course.jamSelesai != null) {
         if (course.jamSelesai is DateTime) {
           end =
               "${course.jamSelesai.hour.toString().padLeft(2, '0')}:${course.jamSelesai.minute.toString().padLeft(2, '0')}";
-        } else if (course.jamSelesai is String) {
-          List<String> parts = (course.jamSelesai as String).split(":");
+        } else {
+          final s = course.jamSelesai.toString();
+          final parts = s.split(':');
           if (parts.length >= 2) {
             end = "${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}";
+          } else {
+            end = s;
           }
         }
       }
@@ -200,7 +245,12 @@ class _RiwayatPageState extends State<RiwayatPage> {
     required String persentase,
     required String jumlah,
   }) {
-    double progressValue = double.tryParse(persentase.replaceAll('%', ''))! / 100;
+    double progressValue = 0.0;
+    try {
+      progressValue = double.tryParse(persentase.replaceAll('%', ''))! / 100;
+    } catch (_) {
+      progressValue = 0.0;
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10),
@@ -228,47 +278,46 @@ class _RiwayatPageState extends State<RiwayatPage> {
             ),
           ),
           const SizedBox(height: 4),
- Text(
-    "$jadwal  •  $sks  •  📍 $ruang",
-    style: const TextStyle(color: Color(0xFF2F2B52), fontSize: 13),
-  ),
+          Text(
+            "$jadwal  •  $sks  •  📍 $ruang",
+            style: const TextStyle(color: Color(0xFF2F2B52), fontSize: 13),
+          ),
           Container(
             margin: const EdgeInsets.only(top: 10),
-  padding: const EdgeInsets.all(10),
-  decoration: BoxDecoration(
-    color: const Color(0xFFE9E2FF),
-    borderRadius: BorderRadius.circular(12),
-  ),
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        persentase,
-        style: const TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF2F2B52),
-        ),
-      ),
-      const SizedBox(height: 4),
-      LinearProgressIndicator(
-        value: progressValue,
-        minHeight: 6,
-        backgroundColor: Colors.white,
-        valueColor: const AlwaysStoppedAnimation(Color(0xFF9B7AFD)),
-      ),
-      const SizedBox(height: 6),
-      Text(
-        "Jumlah Kehadiran: $jumlah",
-        style: const TextStyle(
-          fontSize: 12,
-          color: Color(0xFF2F2B52),
-        ),
-      ),
-    ],
-  ),
-),
-
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE9E2FF),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  persentase,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF2F2B52),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                LinearProgressIndicator(
+                  value: progressValue,
+                  minHeight: 6,
+                  backgroundColor: Colors.white,
+                  valueColor: const AlwaysStoppedAnimation(Color(0xFF9B7AFD)),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "Jumlah Kehadiran: $jumlah",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF2F2B52),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

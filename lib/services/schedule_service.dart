@@ -1,25 +1,32 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/schedule_model.dart';
 
 class ScheduleService {
-  final supabase = Supabase.instance.client;
+  final String baseUrl = 'http://operasional_absensi_mahasiswa.test/api';
+  final String token;
+
+  ScheduleService({required this.token});
 
   Future<List<ScheduleModel>> getUserSchedules(String userId) async {
-    final response = await supabase
-        .from('student_courses')
-        .select('''
-      *,
-      courses:course_id(*,lecturers:dosen_id(*)),
-      users:user_id(*)
-    ''')
-        .eq('user_id', userId);
+    final url = Uri.parse('$baseUrl/student-courses?user_id=$userId');
 
-    if (response == null || response.isEmpty) {
-      return [];
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load schedules: ${response.statusCode}');
     }
 
-    return (response as List)
-        .map((item) => ScheduleModel.fromJson(item))
-        .toList();
+    final Map<String, dynamic> jsonData = jsonDecode(response.body);
+    if (jsonData['success'] != true || jsonData['data'] == null) return [];
+
+    final List data = jsonData['data'];
+    return data.map((item) => ScheduleModel.fromJson(item)).toList();
   }
 }

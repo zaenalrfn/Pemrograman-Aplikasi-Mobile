@@ -2,11 +2,17 @@ import 'package:flutter/foundation.dart';
 import '../models/attendance_history_model.dart';
 import '../models/schedule_model.dart';
 import '../services/attendance_service.dart';
-import '../services/schedule_service.dart';
 
 class AttendanceProvider extends ChangeNotifier {
-  final AttendanceService _attendanceService = AttendanceService();
-  final ScheduleService _scheduleService = ScheduleService();
+  late AttendanceService _attendanceService;
+
+  AttendanceProvider({required String token}) {
+    _attendanceService = AttendanceService(token: token);
+  }
+
+  void updateToken(String token) {
+    _attendanceService = AttendanceService(token: token);
+  }
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -22,13 +28,14 @@ class AttendanceProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Ambil jadwal user
-      _schedules = await _scheduleService.getUserSchedules(userId);
+      // 1) Ambil daftar matkul si user dari /student-courses
+      _schedules = await _attendanceService.getStudentCourses(userId);
 
-      // Ambil attendance user
+      // 2) Ambil semua attendance user (status hadir / alpa)
       _attendances = await _attendanceService.getUserAttendance(userId);
+
     } catch (e) {
-      print("Error loadData: $e");
+      debugPrint("AttendanceProvider.loadData ERROR: $e");
       _schedules = [];
       _attendances = [];
     }
@@ -37,20 +44,18 @@ class AttendanceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // JUMLAH HADIR per course
   int getHadirCount(String courseId) {
     return _attendances
         .where((a) => a.courseId == courseId && a.status == 'hadir')
         .length;
   }
 
+  // PROGRESS = hadir / 14 pertemuan
   double getAttendancePercentage(String courseId) {
-    final total = _attendances.where((a) => a.courseId == courseId).length;
-    if (total == 0) return 0.0;
+    const totalPertemuan = 14;
+    final hadir = getHadirCount(courseId);
 
-    final hadir = _attendances
-        .where((a) => a.courseId == courseId && a.status == 'hadir')
-        .length;
-
-    return hadir / total;
+    return (hadir / totalPertemuan).clamp(0.0, 1.0);
   }
 }

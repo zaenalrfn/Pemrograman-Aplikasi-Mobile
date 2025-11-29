@@ -1,21 +1,29 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
 
 class UserService {
-  final supabase = Supabase.instance.client;
+  final String baseUrl;
 
-  Future<UserModel?> getCurrentUser() async {
-    final user = supabase.auth.currentUser;
-    if (user == null) return null;
+  UserService({required this.baseUrl});
 
-    final response = await supabase
-        .from('users')
-        .select()
-        .eq('id', user.id)
-        .maybeSingle();
+  Future<UserModel?> getCurrentUser(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/current-user'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-    if (response == null) return null;
+      if (response.statusCode != 200) return null;
 
-    return UserModel.fromMap(response);
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return UserModel.fromMap(data);
+    } catch (e) {
+      print("Error getCurrentUser: $e");
+      return null;
+    }
   }
 }

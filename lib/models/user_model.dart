@@ -1,5 +1,3 @@
-import 'package:postgrest/src/types.dart';
-
 class UserModel {
   final String id;
   final String nim;
@@ -31,7 +29,19 @@ class UserModel {
     );
   }
 
-  static UserModel fromMap(PostgrestMap response) {
-    return UserModel.fromJson(response);
+  factory UserModel.fromMap(Map<String, dynamic> map) {
+    return UserModel.fromJson(map);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nim': nim,
+      'name': name,
+      'email': email,
+      'program_studi': program_studi,
+      'semester': semester,
+      'kelas': kelas,
+    };
   }
 }
