@@ -1,8 +1,10 @@
+import 'dart:convert';
+import 'package:absensi_mahasiswa/models/user_model.dart';
 import 'package:absensi_mahasiswa/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/user_model.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'beranda_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -17,7 +19,8 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   bool isLoading = false;
 
-  final supabase = Supabase.instance.client;
+  final storage = const FlutterSecureStorage();
+  final String baseUrl = 'http://operasional_absensi_mahasiswa.test/api';
 
   Future<void> _login() async {
     final email = emailController.text.trim();
@@ -31,42 +34,19 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => isLoading = true);
 
     try {
-      final response = await supabase.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
+      // Panggil provider login
+      final authProvider = context.read<AuthProvider>();
+      final success = await authProvider.login(email, password);
 
-      final user = response.user;
-      if (user != null) {
-        // Ambil data user dari tabel public.users
-        final data = await supabase
-            .from('users')
-            .select('id, name, email, role_id')
-            .eq('id', user.id)
-            .maybeSingle();
-
-        if (data == null) {
-          _showMessage("User tidak ditemukan di tabel users.");
-        } else if (data['role_id'] != 2) {
-          _showMessage("Hanya mahasiswa yang dapat login.");
-          await supabase.auth.signOut();
-        } else {
-          // provider auth
-          final authProvider = context.read<AuthProvider>();
-authProvider.setUser(UserModel.fromMap(data));
-final userFromProvider = authProvider.user;
-print("Current user ID: ${userFromProvider?.id}");
-          // Lolos validasi
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const BerandaPage()),
-          );
-        }
+      if (success) {
+        // Login berhasil, langsung ke Beranda
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const BerandaPage()),
+        );
       } else {
-        _showMessage("Gagal login, periksa email dan password.");
+        _showMessage("Login gagal, periksa email dan password.");
       }
-    } on AuthException catch (e) {
-      _showMessage(e.message);
     } catch (e) {
       _showMessage("Terjadi kesalahan: $e");
     } finally {
@@ -90,8 +70,6 @@ print("Current user ID: ${userFromProvider?.id}");
             const SizedBox(height: 40),
             const CircleAvatar(radius: 50, backgroundColor: Colors.white),
             const SizedBox(height: 40),
-
-            // Bagian bawah putih melengkung
             Expanded(
               child: Container(
                 width: double.infinity,
@@ -124,8 +102,6 @@ print("Current user ID: ${userFromProvider?.id}");
                         style: TextStyle(color: Colors.grey),
                       ),
                       const SizedBox(height: 32),
-
-                      // Input Email
                       TextField(
                         controller: emailController,
                         decoration: InputDecoration(
@@ -143,8 +119,6 @@ print("Current user ID: ${userFromProvider?.id}");
                         ),
                       ),
                       const SizedBox(height: 16),
-
-                      // Input Password
                       TextField(
                         controller: passwordController,
                         obscureText: true,
@@ -163,8 +137,6 @@ print("Current user ID: ${userFromProvider?.id}");
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      // Tombol Masuk
                       SizedBox(
                         width: double.infinity,
                         height: 48,
@@ -186,7 +158,6 @@ print("Current user ID: ${userFromProvider?.id}");
                                 ),
                         ),
                       ),
-
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,

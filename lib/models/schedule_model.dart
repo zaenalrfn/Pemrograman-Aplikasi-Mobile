@@ -1,17 +1,28 @@
 class LecturerModel {
   final String id;
   final String? name;
+  final String? email;
 
   LecturerModel({
     required this.id,
     this.name,
+    this.email,
   });
 
   factory LecturerModel.fromJson(Map<String, dynamic> json) {
     return LecturerModel(
       id: json['id'].toString(),
-      name: json['name'] ?? json['nama_dosen'] ?? '-',
+      name: json['name'] ?? '-',
+      email: json['email'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+    };
   }
 }
 
@@ -22,7 +33,7 @@ class CourseModel {
   final int? sks;
   final String? kelas;
   final String? hari;
-  final String? jamMulai;
+  final String? jamMulai; // kept as String because API returns "HH:mm" often
   final String? jamSelesai;
   final int? semester;
   final String? ruangan;
@@ -45,18 +56,39 @@ class CourseModel {
   factory CourseModel.fromJson(Map<String, dynamic> json) {
     return CourseModel(
       id: json['id'].toString(),
-      kodeMk: json['kode_mk'],
-      namaMk: json['nama_mk'],
-      sks: json['sks'] is int ? json['sks'] : int.tryParse(json['sks']?.toString() ?? ''),
+      kodeMk: json['kode_mk'] ?? json['kodeMk'],
+      namaMk: json['nama_mk'] ?? json['namaMk'],
+      sks: json['sks'] is int
+          ? json['sks']
+          : int.tryParse(json['sks']?.toString() ?? ''),
       kelas: json['kelas'],
       hari: json['hari'],
-      jamMulai: json['jam_mulai'],
-      jamSelesai: json['jam_selesai'],
-      semester: json['semester'] is int ? json['semester'] : int.tryParse(json['semester']?.toString() ?? ''),
-      lecturer: json['lecturers'] != null
-          ? LecturerModel.fromJson(Map<String, dynamic>.from(json['lecturers']))
+      jamMulai: json['jam_mulai'] ?? json['jamMulai'],
+      jamSelesai: json['jam_selesai'] ?? json['jamSelesai'],
+      semester: json['semester'] is int
+          ? json['semester']
+          : int.tryParse(json['semester']?.toString() ?? ''),
+      ruangan: json['ruangan'],
+      lecturer: json['lecturer'] != null
+          ? LecturerModel.fromJson(Map<String, dynamic>.from(json['lecturer']))
           : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'kode_mk': kodeMk,
+      'nama_mk': namaMk,
+      'sks': sks,
+      'kelas': kelas,
+      'hari': hari,
+      'jam_mulai': jamMulai,
+      'jam_selesai': jamSelesai,
+      'semester': semester,
+      'ruangan': ruangan,
+      'lecturer': lecturer?.toJson(),
+    };
   }
 }
 
@@ -86,39 +118,68 @@ class ScheduleModel {
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
     DateTime? parseTime(dynamic value) {
       if (value == null) return null;
+      final s = value.toString().trim();
       try {
-        // format "08:00:00" → DateTime hari ini
-        if (value is String && value.length == 8 && value.contains(':')) {
+        final hhmm = RegExp(r'^\d{1,2}:\d{2}$');
+        final hhmmss = RegExp(r'^\d{1,2}:\d{2}:\d{2}$');
+
+        if (hhmm.hasMatch(s)) {
+          final parts = s.split(':');
           final now = DateTime.now();
-          final parts = value.split(':');
-          return DateTime(
-            now.year,
-            now.month,
-            now.day,
-            int.parse(parts[0]),
-            int.parse(parts[1]),
-            int.parse(parts[2]),
-          );
+          final h = int.tryParse(parts[0]) ?? 0;
+          final m = int.tryParse(parts[1]) ?? 0;
+          return DateTime(now.year, now.month, now.day, h, m);
         }
-        // format ISO (2025-11-04T07:00:00+00:00)
-        return DateTime.tryParse(value.toString());
+
+        if (hhmmss.hasMatch(s)) {
+          final parts = s.split(':');
+          final now = DateTime.now();
+          final h = int.tryParse(parts[0]) ?? 0;
+          final m = int.tryParse(parts[1]) ?? 0;
+          final sec = int.tryParse(parts[2]) ?? 0;
+          return DateTime(now.year, now.month, now.day, h, m, sec);
+        }
+
+        final parsed = DateTime.tryParse(s);
+        if (parsed != null) return parsed;
+        return null;
       } catch (_) {
         return null;
       }
     }
 
+    final course = json['course'] != null
+        ? CourseModel.fromJson(Map<String, dynamic>.from(json['course']))
+        : null;
+
+    DateTime? jm = parseTime(json['jam_mulai'] ?? json['jamMulai'] ?? course?.jamMulai);
+    DateTime? js = parseTime(json['jam_selesai'] ?? json['jamSelesai'] ?? course?.jamSelesai);
+    DateTime? created = parseTime(json['created_at'] ?? json['createdAt']);
+
     return ScheduleModel(
       id: json['id'].toString(),
       userId: json['user_id']?.toString(),
       courseId: json['course_id']?.toString(),
-      hari: json['hari'],
-      ruangan: json['ruangan'],
-      jamMulai: parseTime(json['jam_mulai']),
-      jamSelesai: parseTime(json['jam_selesai']),
-      createdAt: parseTime(json['created_at']),
-      course: json['courses'] != null
-          ? CourseModel.fromJson(Map<String, dynamic>.from(json['courses']))
-          : null,
+      hari: json['hari'] ?? course?.hari,
+      ruangan: json['ruangan'] ?? course?.ruangan,
+      jamMulai: jm,
+      jamSelesai: js,
+      createdAt: created,
+      course: course,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'course_id': courseId,
+      'hari': hari,
+      'ruangan': ruangan,
+      'jam_mulai': jamMulai?.toIso8601String(),
+      'jam_selesai': jamSelesai?.toIso8601String(),
+      'created_at': createdAt?.toIso8601String(),
+      'course': course?.toJson(),
+    };
   }
 }

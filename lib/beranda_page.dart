@@ -2,9 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../models/user_model.dart';
 import '../models/schedule_model.dart';
-import '../services/user_service.dart';
+import '../providers/auth_provider.dart';
 import '../providers/schedule_provider.dart';
 import 'providers/scheduleNextCourse_provider.dart';
 import '../widgets/custom_button_nav.dart';
@@ -17,73 +16,98 @@ class BerandaPage extends StatefulWidget {
 }
 
 class _BerandaPageState extends State<BerandaPage> {
-  UserModel? currentUser;
-  final userService = UserService();
-  Timer? _timer; // ✅ timer untuk auto-refresh ringan
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    loadUser();
+    loadUserAndSchedules();
 
-    // 🔁 auto refresh UI tiap 1 menit (tanpa fetch API)
-    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  Future<void> loadUser() async {
-    final user = await userService.getCurrentUser();
-    if (user == null) return;
-
-    setState(() => currentUser = user);
-
-    final provider = Provider.of<ScheduleProvider>(context, listen: false);
-    await provider.loadTodaySchedules(user.id);
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel(); // ✅ pastikan timer dibersihkan
-    super.dispose();
-  }
-
-  String _namaHariIndo(int weekday) {
-    const hari = [
-      'Senin',
-      'Selasa',
-      'Rabu',
-      'Kamis',
-      "Jum'at",
-      'Sabtu',
-      'Minggu',
-    ];
-    return hari[weekday - 1];
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final provider = context.watch<ScheduleProvider>();
-    final todaySchedules = provider.todaySchedules;
-    final nextCourse = todaySchedules.isNotEmpty ? todaySchedules.first : null;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Auto-refresh tiap 1 menit
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) async {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final scheduleProvider = Provider.of<ScheduleProvider>(
+        context,
+        listen: false,
+      );
       final nextCourseProvider = Provider.of<SchedulenextcourseProvider>(
         context,
         listen: false,
       );
-      nextCourseProvider.setNextCourse(nextCourse);
+
+      if (authProvider.isLoggedIn) {
+        await scheduleProvider.loadTodaySchedules(authProvider.user!.id);
+        nextCourseProvider.setNextCourse(scheduleProvider.nextSchedule);
+      }
+
+      if (mounted) setState(() {});
     });
+  }
+
+  Future<void> loadUserAndSchedules() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await authProvider.loadUserFromStorage();
+
+    if (!authProvider.isLoggedIn) return;
+
+    final user = authProvider.user!;
+    final token = authProvider.token!;
+
+    // Init ScheduleProvider
+    final scheduleProvider = Provider.of<ScheduleProvider>(
+      context,
+      listen: false,
+    );
+    scheduleProvider.init(token);
+
+    // Load schedules
+    await scheduleProvider.loadTodaySchedules(user.id);
+
+    // Set nextCourse di provider
+    final nextCourseProvider = Provider.of<SchedulenextcourseProvider>(
+      context,
+      listen: false,
+    );
+    nextCourseProvider.setNextCourse(scheduleProvider.nextSchedule);
+
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final scheduleProvider = Provider.of<ScheduleProvider>(context);
+    final todaySchedules = scheduleProvider.todaySchedules;
+    final nextCourseProvider = Provider.of<SchedulenextcourseProvider>(context);
+    final nextCourse = nextCourseProvider.nextCourse;
+
+    final name = authProvider.user?.name.split(' ').first ?? '';
+    final tanggal = DateFormat(
+      'EEEE, dd MMMM yyyy',
+      'id_ID',
+    ).format(DateTime.now());
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       body: SafeArea(
-        child: provider.isLoading
+        child: scheduleProvider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : RefreshIndicator(
                 onRefresh: () async {
-                  if (currentUser != null) {
-                    await provider.loadTodaySchedules(currentUser!.id);
+                  if (authProvider.isLoggedIn) {
+                    await scheduleProvider.loadTodaySchedules(
+                      authProvider.user!.id,
+                      forceReload: true,
+                    );
+                    nextCourseProvider.setNextCourse(
+                      scheduleProvider.nextSchedule,
+                    );
                   }
                 },
                 child: SingleChildScrollView(
@@ -92,15 +116,66 @@ class _BerandaPageState extends State<BerandaPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _header(),
+                      // Header
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Selamat pagi, $name",
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF2F2B52),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                tanggal,
+                                style: const TextStyle(
+                                  color: Color(0xFF2F2B52),
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Color(0xFFEBEBFF),
+                            child: Icon(Icons.person, color: Color(0xFF7463F0)),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 24),
+                      // Next Course Card
                       if (nextCourse != null)
                         _nextCourseCard(nextCourse)
                       else
                         _noCourseCard(),
                       const SizedBox(height: 24),
-                      _titleJadwal(),
+                      // Title Jadwal
+                      const Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today_rounded,
+                            color: Color(0xFF2F2B52),
+                            size: 24,
+                          ),
+                          SizedBox(width: 14),
+                          Text(
+                            "Jadwal Hari Ini",
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Color(0xFF2F2B52),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 16),
+                      // Jadwal List
                       if (todaySchedules.isEmpty)
                         const Center(
                           child: Padding(
@@ -113,10 +188,9 @@ class _BerandaPageState extends State<BerandaPage> {
                         )
                       else
                         Column(
-                          children: [
-                            for (var jadwal in todaySchedules)
-                              _buildJadwalItem(jadwal),
-                          ],
+                          children: todaySchedules
+                              .map(_buildJadwalItem)
+                              .toList(),
                         ),
                     ],
                   ),
@@ -145,61 +219,6 @@ class _BerandaPageState extends State<BerandaPage> {
     );
   }
 
-  // 🔹 Header
-  Widget _header() {
-    final name = currentUser?.name.split(' ').first ?? '';
-    final tanggal = DateFormat(
-      'EEEE, dd MMMM yyyy',
-      'id_ID',
-    ).format(DateTime.now());
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Selamat pagi, $name",
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF2F2B52),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              tanggal,
-              style: const TextStyle(color: Color(0xFF2F2B52), fontSize: 16),
-            ),
-          ],
-        ),
-        const CircleAvatar(
-          radius: 20,
-          backgroundColor: Color(0xFFEBEBFF),
-          child: Icon(Icons.person, color: Color(0xFF7463F0)),
-        ),
-      ],
-    );
-  }
-
-  // 🔹 Judul Jadwal
-  Widget _titleJadwal() => const Row(
-    children: [
-      Icon(Icons.calendar_today_rounded, color: Color(0xFF2F2B52), size: 24),
-      SizedBox(width: 14),
-      Text(
-        "Jadwal Hari Ini",
-        style: TextStyle(
-          fontSize: 20,
-          color: Color(0xFF2F2B52),
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    ],
-  );
-
-  // 🔹 Item jadwal
   Widget _buildJadwalItem(ScheduleModel jadwal) {
     final now = DateTime.now();
     final jamMulai = jadwal.jamMulai;
@@ -254,7 +273,6 @@ class _BerandaPageState extends State<BerandaPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // nama matkul + status
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -296,7 +314,8 @@ class _BerandaPageState extends State<BerandaPage> {
               const Icon(Icons.access_time, size: 18, color: Color(0xFF2F2B52)),
               const SizedBox(width: 6),
               Text(
-                "${jadwal.jamMulai?.hour.toString().padLeft(2, '0')}:${jadwal.jamMulai?.minute.toString().padLeft(2, '0')} - ${jadwal.jamSelesai?.hour.toString().padLeft(2, '0')}:${jadwal.jamSelesai?.minute.toString().padLeft(2, '0')}",
+                "${jadwal.jamMulai?.hour.toString().padLeft(2, '0')}:${jadwal.jamMulai?.minute.toString().padLeft(2, '0')} - "
+                "${jadwal.jamSelesai?.hour.toString().padLeft(2, '0')}:${jadwal.jamSelesai?.minute.toString().padLeft(2, '0')}",
               ),
               const SizedBox(width: 16),
               const Icon(Icons.location_on, size: 18, color: Color(0xFF2F2B52)),
@@ -310,7 +329,6 @@ class _BerandaPageState extends State<BerandaPage> {
     );
   }
 
-  // 🔹 Card Next Course
   Widget _nextCourseCard(ScheduleModel nextCourse) {
     return Container(
       width: double.infinity,
@@ -341,7 +359,8 @@ class _BerandaPageState extends State<BerandaPage> {
               const Icon(Icons.access_time, color: Colors.white, size: 18),
               const SizedBox(width: 6),
               Text(
-                "${nextCourse.jamMulai?.hour.toString().padLeft(2, '0')}:${nextCourse.jamMulai?.minute.toString().padLeft(2, '0')} - ${nextCourse.jamSelesai?.hour.toString().padLeft(2, '0')}:${nextCourse.jamSelesai?.minute.toString().padLeft(2, '0')}",
+                "${nextCourse.jamMulai?.hour.toString().padLeft(2, '0')}:${nextCourse.jamMulai?.minute.toString().padLeft(2, '0')} - "
+                "${nextCourse.jamSelesai?.hour.toString().padLeft(2, '0')}:${nextCourse.jamSelesai?.minute.toString().padLeft(2, '0')}",
                 style: const TextStyle(color: Colors.white, fontSize: 14),
               ),
             ],
@@ -351,7 +370,6 @@ class _BerandaPageState extends State<BerandaPage> {
     );
   }
 
-  // 🔹 Card kosong
   Widget _noCourseCard() {
     return Container(
       width: double.infinity,

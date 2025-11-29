@@ -19,15 +19,27 @@ class CourseModel {
 
   factory CourseModel.fromMap(Map<String, dynamic> map) {
     return CourseModel(
-      id: map['id'],
-      namaMk: map['nama_mk'] ?? '-',
-      hari: map['hari'],
-      jamMulai: map['jam_mulai'],
-      jamSelesai: map['jam_selesai'],
-      sks: map['sks'],
-      ruangan: map['ruangan'],
+      id: map['id'].toString(),
+      namaMk: map['nama_mk']?.toString() ?? '-',
+      hari: map['hari']?.toString(),
+      jamMulai: map['jam_mulai']?.toString(),
+      jamSelesai: map['jam_selesai']?.toString(),
+      sks: map['sks'] != null ? int.tryParse(map['sks'].toString()) : null,
+      ruangan: map['ruangan']?.toString(),
     );
   }
 
   static CourseModel fromJson(Map<String, dynamic> json) => CourseModel.fromMap(json);
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nama_mk': namaMk,
+      'hari': hari,
+      'jam_mulai': jamMulai,
+      'jam_selesai': jamSelesai,
+      'sks': sks,
+      'ruangan': ruangan,
+    };
+  }
 }
