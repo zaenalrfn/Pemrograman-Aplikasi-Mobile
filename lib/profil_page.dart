@@ -18,9 +18,9 @@ class _ProfilePageState extends State<ProfilePage> {
   final String _fallbackSemester = "Semester 5";
   final String _fallbackProdi = "Informatika";
   final String _fallbackEmail = "zaenalfullstack@gmail.com";
-  final String _fallbackPhone = "082177359177";
-  final String _fallbackFaculty = "Sains dan Teknologi";
-  final String _fallbackRegDate = "15 Agustus 2023";
+  // final String _fallbackPhone = "082177359177";
+  // final String _fallbackFaculty = "Sains dan Teknologi";
+  // final String _fallbackRegDate = "15 Agustus 2023";
   // ---------------------------------------------------------------------
 
   @override
