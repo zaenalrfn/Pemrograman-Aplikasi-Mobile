@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/custom_button_nav.dart';
-
-// Jika kamu punya file model/service sendiri, uncomment baris di bawah ini
-// import '../models/user_model.dart';
-// import '../services/user_service.dart';
+import '../providers/auth_provider.dart'; // sesuaikan path jika berbeda
+// jangan ubah UI
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -13,33 +12,49 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  // --- DATA DUMMY (Ganti dengan data dari API/UserService kamu nanti) ---
-  final String userName = "Zaenal Arifin";
-  final String userId = "5230411078";
-  final String userSemester = "Semester 5";
-  final String userProdi = "Informatika";
-  final String userEmail = "zaenalfullstack@gmail.com";
-  final String userPhone = "082177359177";
-  final String userFaculty = "Sains dan Teknologi";
-  final String userRegDate = "15 Agustus 2023";
+  // --- DATA DUMMY (fallback jika user belum tersedia) ---
+  final String _fallbackName = "Zaenal Arifin";
+  final String _fallbackNim = "5230411078";
+  final String _fallbackSemester = "Semester 5";
+  final String _fallbackProdi = "Informatika";
+  final String _fallbackEmail = "zaenalfullstack@gmail.com";
+  final String _fallbackPhone = "082177359177";
+  final String _fallbackFaculty = "Sains dan Teknologi";
+  final String _fallbackRegDate = "15 Agustus 2023";
   // ---------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
+    // Ambil provider (listen: true agar UI update saat user berubah)
+    final authProvider = Provider.of<AuthProvider>(context);
+    final user = authProvider.user;
+
+    // Ambil field dengan fallback — ganti nama properti user sesuai modelmu bila perlu
+    final userName = user?.name ?? _fallbackName;
+    final userNim = user?.nim ?? user?.nim?.toString() ?? _fallbackNim;
+    final userSemester = user?.semester ?? _fallbackSemester;
+    final userProdi = user?.program_studi ?? user?.program_studi ?? _fallbackProdi;
+    final userEmail = user?.email ?? _fallbackEmail;
+    // final userFaculty = user?.faculty ?? _fallbackFaculty;
+    // registeredAt mungkin DateTime atau String; adaptasi jika perlu
+    // final userRegDate = user?.registeredAt is DateTime
+    //     ? (user!.registeredAt as DateTime).toLocal().toString().split(' ')[0]
+    //     : (user?.registeredAt?.toString() ?? _fallbackRegDate);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA), // Background abu-abu muda
+      backgroundColor: const Color(0xFFF5F6FA),
       body: SingleChildScrollView(
         child: Column(
           children: [
             // 1. HEADER (Bagian Ungu Atas)
-            _buildHeader(),
+            _buildHeader(userName, userNim, userSemester, userProdi),
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Column(
                 children: [
                   // 2. KARTU INFORMASI USER
-                  _buildInfoCard(),
+                  _buildInfoCard(userEmail),
                   
                   const SizedBox(height: 20),
 
@@ -83,15 +98,13 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // ================= WIDGET BUILDERS =================
-
-  // 1. HEADER BUILDER
-  Widget _buildHeader() {
+  Widget _buildHeader(String userName, String userId, String userSemester, String userProdi) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.only(top: 60, bottom: 40, left: 25, right: 25),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF8B80F8), Color(0xFF7463F0)], // Gradasi Ungu
+          colors: [Color(0xFF8B80F8), Color(0xFF7463F0)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -142,7 +155,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     _buildBadge(userSemester, const Color(0xFF9F94FF)),
                     const SizedBox(width: 8),
-                    _buildBadge(userProdi, const Color(0xFF00C853)), // Hijau
+                    _buildBadge(userProdi, const Color(0xFF00C853)),
                   ],
                 )
               ],
@@ -171,8 +184,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // 2. INFO CARD BUILDER
-  Widget _buildInfoCard() {
+  Widget _buildInfoCard(String userEmail) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -189,12 +201,6 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Column(
         children: [
           _buildInfoItem(Icons.email_outlined, "Email", userEmail),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1)),
-          _buildInfoItem(Icons.phone_outlined, "Nomor Telepon", userPhone),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1)),
-          _buildInfoItem(Icons.location_on_outlined, "Fakultas", userFaculty),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1)),
-          _buildInfoItem(Icons.calendar_today_outlined, "Tanggal Registrasi", userRegDate),
         ],
       ),
     );
@@ -207,7 +213,7 @@ class _ProfilePageState extends State<ProfilePage> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF7463F0).withOpacity(0.1), // Ungu Pudar
+            color: const Color(0xFF7463F0).withOpacity(0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: const Color(0xFF7463F0), size: 22),
@@ -241,7 +247,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // 3. FACE RECOGNITION CARD BUILDER
   Widget _buildFaceRecogCard() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -275,7 +280,7 @@ class _ProfilePageState extends State<ProfilePage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00C853), // Hijau
+                  color: const Color(0xFF00C853),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
@@ -318,7 +323,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7463F0), // Warna Ungu Utama
+                backgroundColor: const Color(0xFF7463F0),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 elevation: 2,
                 shape: RoundedRectangleBorder(
@@ -332,7 +337,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // 4. SETTINGS CARD BUILDER
   Widget _buildSettingsCard() {
     return Container(
       padding: const EdgeInsets.all(10),

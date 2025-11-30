@@ -315,7 +315,7 @@ class _ScanPageState extends State<ScanPage> {
                                   const SizedBox(height: 10),
 
                                   Text(
-                                    "${nextCourse?.course?.kelas} • ${nextCourse?.course?.lecturer?.name} • ${nextCourse?.course?.sks} SKS",
+                                    "${nextCourse?.course?.kelas ?? '-'} • ${nextCourse?.course?.lecturer?.name ?? '-'} • ${nextCourse?.course?.sks ?? '-'} SKS",
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: Color(0xFF2F2B52),
@@ -338,9 +338,9 @@ class _ScanPageState extends State<ScanPage> {
 
                                       Expanded(
                                         child: Text(
-                                          "${nextCourse?.jamMulai?.hour.toString().padLeft(2, '0')}:${nextCourse?.jamMulai?.minute.toString().padLeft(2, '0')}"
+                                          "${nextCourse?.jamMulai?.hour.toString().padLeft(2, '0') ?? '-'}:${nextCourse?.jamMulai?.minute.toString().padLeft(2, '0') ?? '-'}"
                                           " - "
-                                          "${nextCourse?.jamSelesai?.hour.toString().padLeft(2, '0')}:${nextCourse?.jamSelesai?.minute.toString().padLeft(2, '0')}",
+                                          "${nextCourse?.jamSelesai?.hour.toString().padLeft(2, '0') ?? '-'}:${nextCourse?.jamSelesai?.minute.toString().padLeft(2, '0') ?? '-'}",
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(

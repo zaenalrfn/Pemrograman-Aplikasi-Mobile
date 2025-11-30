@@ -37,6 +37,9 @@ void main() async {
           },
         ),
         ChangeNotifierProvider(create: (_) => SchedulenextcourseProvider()),
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider()..loadUserFromStorage(), // muat user bila ada
+        ),
       ],
       child: const MyApp(),
     ),
