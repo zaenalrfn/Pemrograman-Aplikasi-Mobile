@@ -4,15 +4,9 @@ import '../models/schedule_model.dart';
 import '../services/attendance_service.dart';
 
 class AttendanceProvider extends ChangeNotifier {
-  late AttendanceService _attendanceService;
+  final AttendanceService _attendanceService = AttendanceService();
 
-  AttendanceProvider({required String token}) {
-    _attendanceService = AttendanceService(token: token);
-  }
-
-  void updateToken(String token) {
-    _attendanceService = AttendanceService(token: token);
-  }
+  AttendanceProvider();
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -33,7 +27,6 @@ class AttendanceProvider extends ChangeNotifier {
 
       // 2) Ambil semua attendance user (status hadir / alpa)
       _attendances = await _attendanceService.getUserAttendance(userId);
-
     } catch (e) {
       debugPrint("AttendanceProvider.loadData ERROR: $e");
       _schedules = [];

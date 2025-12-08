@@ -1,26 +1,31 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import '../models/attendance_history_model.dart';
 import '../models/schedule_model.dart'; // <- tambah ini
 
 class AttendanceService {
-  final String baseUrl = 'http://operasional_absensi_mahasiswa.test/api';
-  final String token;
+  final String baseUrl = 'http://192.168.222.58:8000/api';
+  final storage = const FlutterSecureStorage();
 
-  AttendanceService({required this.token});
+  AttendanceService();
 
-  Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
+  Future<Map<String, String>> get _headers async {
+    final token = await storage.read(key: 'token');
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+  }
 
   // existing methods...
   Future<List<CourseModel>> getAllCourses() async {
     final url = Uri.parse('$baseUrl/courses');
+    final headers = await _headers;
 
-    final response = await http.get(url, headers: _headers);
+    final response = await http.get(url, headers: headers);
 
     if (response.statusCode != 200) {
       debugPrint("getAllCourses ERROR Body: ${response.body}");
@@ -37,8 +42,9 @@ class AttendanceService {
 
   Future<List<AttendanceModel>> getUserAttendance(String userId) async {
     final url = Uri.parse('$baseUrl/attendances?user_id=$userId');
+    final headers = await _headers;
 
-    final response = await http.get(url, headers: _headers);
+    final response = await http.get(url, headers: headers);
 
     if (response.statusCode != 200) {
       debugPrint("getUserAttendance ERROR Body: ${response.body}");
@@ -56,8 +62,9 @@ class AttendanceService {
   // NEW: ambil student-courses untuk user (mengembalikan ScheduleModel list)
   Future<List<ScheduleModel>> getStudentCourses(String userId) async {
     final url = Uri.parse('$baseUrl/student-courses?user_id=$userId');
+    final headers = await _headers;
 
-    final response = await http.get(url, headers: _headers);
+    final response = await http.get(url, headers: headers);
 
     if (response.statusCode != 200) {
       debugPrint("getStudentCourses ERROR Body: ${response.body}");

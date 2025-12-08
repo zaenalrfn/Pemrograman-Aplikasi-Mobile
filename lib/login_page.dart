@@ -20,7 +20,7 @@ class _LoginPageState extends State<LoginPage> {
   bool isLoading = false;
 
   final storage = const FlutterSecureStorage();
-  final String baseUrl = 'http://operasional_absensi_mahasiswa.test/api';
+  final String baseUrl = 'http://192.168.222.58:8000/api';
 
   Future<void> _login() async {
     final email = emailController.text.trim();

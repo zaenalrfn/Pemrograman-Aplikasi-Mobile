@@ -27,18 +27,11 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ScheduleProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        // AttendanceProvider dibuat di sini; token akan di-push via ProxyProvider update
-        ChangeNotifierProxyProvider<AuthProvider, AttendanceProvider>(
-          create: (_) => AttendanceProvider(token: ''),
-          update: (_, auth, att) {
-            att ??= AttendanceProvider(token: auth.token ?? '');
-            att.updateToken(auth.token ?? '');
-            return att;
-          },
-        ),
+        ChangeNotifierProvider(create: (_) => AttendanceProvider()),
         ChangeNotifierProvider(create: (_) => SchedulenextcourseProvider()),
         ChangeNotifierProvider(
-          create: (_) => AuthProvider()..loadUserFromStorage(), // muat user bila ada
+          create: (_) =>
+              AuthProvider()..loadUserFromStorage(), // muat user bila ada
         ),
       ],
       child: const MyApp(),

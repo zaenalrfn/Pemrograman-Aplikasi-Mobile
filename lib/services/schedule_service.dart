@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/schedule_model.dart';
 
 class ScheduleService {
-  final String baseUrl = 'http://operasional_absensi_mahasiswa.test/api';
+  final String baseUrl = 'http://192.168.222.58:8000/api';
   final String token;
 
   ScheduleService({required this.token});
