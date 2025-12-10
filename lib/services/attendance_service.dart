@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -6,7 +7,7 @@ import '../models/attendance_history_model.dart';
 import '../models/schedule_model.dart'; // <- tambah ini
 
 class AttendanceService {
-  final String baseUrl = 'http://192.168.222.58:8000/api';
+  final String? baseUrl = dotenv.env['API_BASE'];
   final storage = const FlutterSecureStorage();
 
   AttendanceService();
@@ -88,5 +89,45 @@ class AttendanceService {
     return rawList
         .map((e) => ScheduleModel.fromJson(Map<String, dynamic>.from(e)))
         .toList();
+  }
+
+  // NEW: Submit attendance
+  Future<bool> performAttendance({
+    required String userId,
+    required String courseId,
+    required String tanggal,
+    required String status,
+    required String method,
+    String? photoCapture,
+    bool verified = false,
+  }) async {
+    final url = Uri.parse('$baseUrl/attendances');
+    final headers = await _headers;
+
+    final body = jsonEncode({
+      'user_id': userId,
+      'course_id': courseId,
+      'tanggal': tanggal,
+      'status': status,
+      'method': method,
+      'photo_capture': photoCapture,
+      'verified': verified,
+    });
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+
+      if (response.statusCode == 201) {
+        return true;
+      } else {
+        debugPrint(
+          "performAttendance ERROR: ${response.statusCode} - ${response.body}",
+        );
+        return false;
+      }
+    } catch (e) {
+      debugPrint("performAttendance EXCEPTION: $e");
+      return false;
+    }
   }
 }

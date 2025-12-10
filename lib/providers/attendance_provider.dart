@@ -51,4 +51,36 @@ class AttendanceProvider extends ChangeNotifier {
 
     return (hadir / totalPertemuan).clamp(0.0, 1.0);
   }
+
+  Future<bool> submitAttendance({
+    required String userId,
+    required String courseId,
+    required String tanggal, // format YYYY-MM-DD
+    required String status,
+    required String method,
+    String? photoCapture,
+    bool verified = false,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    final success = await _attendanceService.performAttendance(
+      userId: userId,
+      courseId: courseId,
+      tanggal: tanggal,
+      status: status,
+      method: method,
+      photoCapture: photoCapture,
+      verified: verified,
+    );
+
+    if (success) {
+      // Refresh data jika berhasil absen
+      await loadData(userId);
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return success;
+  }
 }

@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/schedule_model.dart';
 
 class ScheduleService {
-  final String baseUrl = 'http://192.168.222.58:8000/api';
+  final String? baseUrl = dotenv.env['API_BASE'];
   final String token;
 
   ScheduleService({required this.token});

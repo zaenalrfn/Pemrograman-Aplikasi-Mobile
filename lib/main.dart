@@ -20,8 +20,6 @@ void main() async {
   await dotenv.load(fileName: ".env");
   await initializeDateFormatting('id_ID', null);
 
-  final apiBase = dotenv.env['API_BASE'] ?? '';
-
   runApp(
     MultiProvider(
       providers: [

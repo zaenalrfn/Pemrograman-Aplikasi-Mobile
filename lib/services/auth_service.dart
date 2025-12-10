@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -6,7 +7,7 @@ import '../models/user_model.dart';
 
 class AuthService {
   final FlutterSecureStorage storage = const FlutterSecureStorage();
-  final String baseUrl = 'http://192.168.222.58:8000/api';
+  final String? baseUrl = dotenv.env['API_BASE'];
 
   /// Login dan simpan token + user ke FlutterSecureStorage.
   /// Meng-handle beberapa format token yang umum dikembalikan backend.
