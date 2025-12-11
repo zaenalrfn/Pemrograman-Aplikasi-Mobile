@@ -24,19 +24,13 @@ class FaceRecognitionService {
     try {
       final request = http.MultipartRequest('POST', uri);
 
-      // Add the file
-      // NOTE: The Python API expects the key 'file'
-      // We rename the file to match the required format: NIM_Nama.jpg
-      // This is crucial because the API might use the filename for recognition matching if needed,
-      // or simply for logging. The user specified "nama filenya itu nim_namausernya".
-
-      final newPath = imageFile.path.replaceAll(RegExp(r'[^/]+$'), '$name.jpg');
-      final renamedFile = await imageFile.copy(newPath);
+      // The new API just needs the file bytes with key 'file'.
+      // It does NOT use the filename for recognition.
 
       request.files.add(
         await http.MultipartFile.fromPath(
           'file',
-          renamedFile.path,
+          imageFile.path,
           contentType: MediaType('image', 'jpeg'),
         ),
       );
@@ -46,7 +40,19 @@ class FaceRecognitionService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data; // Expecting { "success": true, "data": [...], "message": ... }
+        // New API Response:
+        // Success: { "name": "...", "similarity": 99.9, "status": "recognized" }
+        // Fail: { "name": "...", "similarity": ..., "status": "unknown" } or { "name": "Tidak ditemukan wajah", ... }
+
+        bool isSuccess = data['status'] == 'recognized';
+
+        return {
+          'success': isSuccess,
+          'data': data, // Pass the whole object
+          'message': isSuccess
+              ? 'Face detected'
+              : (data['name'] ?? 'Wajah tidak dikenali'),
+        };
       } else {
         debugPrint(
           "Face Recog Error: ${response.statusCode} - ${response.body}",

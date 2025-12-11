@@ -104,10 +104,29 @@ class _CameraScanPageState extends State<CameraScanPage> {
         final now = DateTime.now();
         final tanggal = DateFormat('yyyy-MM-dd').format(now);
 
-        // Ambil base64 atau path?
-        // Requirement: "otomatis post data ke attendance"
-        // Kita kirim nama file saja sebagai photo_capture, atau kosongkan jika backend tidak butuh fisik file.
-        // Asumsi kirim nama file yang tadi dikirim ke face recognition.
+        // Ambil data hasil deteksi (name & accuracy)
+        // Service returns: { 'success': true, 'data': { 'name': '...', 'similarity': 99.9, ... } }
+
+        final data = result['data'] ?? {};
+        String detectedName = data['name'] ?? '-';
+        String detectedNpm = (data['npm'] ?? '').toString();
+        double accuracy = (data['similarity'] is num)
+            ? (data['similarity'] as num).toDouble()
+            : 0.0;
+
+        // VERIFIKASI NPM
+        // Pastikan NPM dari hasil deteksi wajah SAMA dengan NIM usernya yang sedang login
+        if (detectedNpm != user.nim) {
+          _showErrorDialog(
+            "NIM tidak cocok! Wajah terdeteksi sebagai $detectedNpm, sedangkan Anda login sebagai ${user.nim}.",
+          );
+          return;
+        }
+
+        // Clean up name if it has format NIM_Name_xx
+        // The API might return "5221911012_Debora_05"
+        // Let's display it as is or clean it. The user request showed raw name.
+        // We will display raw name.
 
         final successAbsen = await attendanceProvider.submitAttendance(
           userId: user.id,
@@ -123,7 +142,7 @@ class _CameraScanPageState extends State<CameraScanPage> {
         if (!mounted) return;
 
         if (successAbsen) {
-          _showSuccessDialog();
+          _showSuccessDialog(detectedName, accuracy);
         } else {
           _showErrorDialog("Gagal mencatat absensi ke server.");
         }
@@ -141,7 +160,7 @@ class _CameraScanPageState extends State<CameraScanPage> {
     }
   }
 
-  void _showSuccessDialog() {
+  void _showSuccessDialog(String name, double accuracy) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -175,11 +194,54 @@ class _CameraScanPageState extends State<CameraScanPage> {
               ),
               const SizedBox(height: 20),
               const Text(
-                'Absensi berhasil!\nSelamat mengikuti perkuliahan',
+                'Absensi berhasil!',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Menampilkan Nama dan Akurasi
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      name,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Akurasi: ${accuracy.toStringAsFixed(2)}%',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Selamat mengikuti perkuliahan',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
                   height: 1.5,
                 ),
               ),
