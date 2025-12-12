@@ -234,9 +234,13 @@ class _BerandaPageState extends State<BerandaPage> {
         warnaStatus = Colors.green;
         tombol = ElevatedButton(
           onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Fitur absen dimulai")),
-            );
+            // Set course yang dipilih ini sebagai nextCourse supaya di halaman scan langsung muncul
+            Provider.of<SchedulenextcourseProvider>(
+              context,
+              listen: false,
+            ).setNextCourse(jadwal);
+
+            Navigator.pushNamed(context, '/scan');
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.green,

@@ -1,9 +1,7 @@
-import 'dart:convert';
-import 'package:absensi_mahasiswa/models/user_model.dart';
 import 'package:absensi_mahasiswa/providers/auth_provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'beranda_page.dart';
 
@@ -20,7 +18,7 @@ class _LoginPageState extends State<LoginPage> {
   bool isLoading = false;
 
   final storage = const FlutterSecureStorage();
-  final String baseUrl = 'http://operasional_absensi_mahasiswa.test/api';
+  final String? baseUrl = dotenv.env['API_BASE'];
 
   Future<void> _login() async {
     final email = emailController.text.trim();

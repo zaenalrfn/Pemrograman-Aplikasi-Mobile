@@ -37,8 +37,14 @@ class _ScanPageState extends State<ScanPage> {
   Future<void> _ensureNextCourseIsSet() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-      final nextCourseProvider = Provider.of<SchedulenextcourseProvider>(context, listen: false);
+      final scheduleProvider = Provider.of<ScheduleProvider>(
+        context,
+        listen: false,
+      );
+      final nextCourseProvider = Provider.of<SchedulenextcourseProvider>(
+        context,
+        listen: false,
+      );
 
       // Jika user belum dimuat, coba muat dari storage
       if (!authProvider.isLoggedIn) {
@@ -303,7 +309,7 @@ class _ScanPageState extends State<ScanPage> {
                                         ),
                                         child: Text(
                                           status,
-                                          style:  TextStyle(
+                                          style: TextStyle(
                                             color: warnaStatus,
                                             fontSize: 12,
                                           ),
