@@ -3,9 +3,11 @@ import 'dart:math' show cos, sqrt, asin, sin, pi;
 
 class GeofenceService {
   // Lokasi yang diizinkan (ubah sesuai link Google Maps)
-  static const double allowedLatitude = -7.756594393550913;
-  static const double allowedLongitude = 110.34407829464112;
-  static const double radiusInMeters = 100.0; // radius 100 meter
+  static const double allowedLatitude = -7.756573132208431;
+  static const double allowedLongitude = 110.34411048115037;
+  static const double radiusInMeters = 1000.0; // radius 100 meter
+  // uty -7.747388626569646, 110.35534568962402
+  // kos -7.756573132208431, 110.34411048115037
 
   // 🔹 Cek apakah layanan lokasi aktif
   static Future<bool> isLocationServiceEnabled() async {
@@ -55,12 +57,17 @@ class GeofenceService {
 
   // 🔹 Hitung jarak antar dua koordinat (pakai Haversine formula)
   static double calculateDistance(
-      double lat1, double lon1, double lat2, double lon2) {
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
     const double earthRadius = 6371000; // meter
     double dLat = _toRadians(lat2 - lat1);
     double dLon = _toRadians(lon2 - lon1);
 
-    double a = sin(dLat / 2) * sin(dLat / 2) +
+    double a =
+        sin(dLat / 2) * sin(dLat / 2) +
         cos(_toRadians(lat1)) *
             cos(_toRadians(lat2)) *
             sin(dLon / 2) *

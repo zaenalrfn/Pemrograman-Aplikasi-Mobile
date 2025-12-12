@@ -93,7 +93,70 @@ class _CameraScanPageState extends State<CameraScanPage> {
           .trim();
       final String fileName = "${user.nim}_$safeName";
 
-      // 3. Kirim ke Face Recognition API
+      final now = DateTime.now();
+
+      // 3. Cek Double Attendance (Moved Up)
+      // Pastikan courseId tersedia
+      final cId = nextCourse.courseId ?? nextCourse.course?.id;
+      if (cId != null && attendanceProvider.hasAttendedToday(cId)) {
+        if (!mounted) return;
+        _showErrorDialog(
+          "Anda sudah melakukan absensi untuk mata kuliah ini hari ini.",
+        );
+        setState(() => _isProcessing = false);
+        return;
+      }
+
+      // 4. Cek Waktu (Time Constraint)
+      final jamMulai = nextCourse.jamMulai;
+      final jamSelesai = nextCourse.jamSelesai;
+
+      if (jamMulai != null && jamSelesai != null) {
+        // CASE 1: Belum Mulai (Too Early) -> Cuma Blok, Jangan Absenkan
+        if (now.isBefore(jamMulai)) {
+          if (!mounted) return;
+          _showErrorDialog(
+            "Kelas belum dimulai. Absensi baru dapat dilakukan mulai pukul ${DateFormat('HH:mm').format(jamMulai)}.",
+          );
+          setState(() => _isProcessing = false);
+          return;
+        }
+
+        // CASE 2: Sudah Selesai (Too Late) -> Blok + Auto Absen (Tidak Hadir)
+        if (now.isAfter(jamSelesai)) {
+          final tanggal = DateFormat('yyyy-MM-dd').format(now);
+
+          final success = await attendanceProvider.submitAttendance(
+            userId: user.id,
+            courseId: nextCourse.courseId ?? nextCourse.course?.id ?? '',
+            tanggal: tanggal,
+            status: 'alpha', // Changed to 'alpha' to satisfy backend
+            method: 'manual', // Changed to 'manual' to satisfy backend
+            photoCapture: '-',
+            verified: false,
+          );
+
+          if (!mounted) return;
+
+          if (success) {
+            _showErrorDialog(
+              // Using ErrorDialog style but message indicates status recorded
+              "Kelas sudah selesai pada pukul ${DateFormat('HH:mm').format(jamSelesai)}. Status Anda dicatat sebagai 'Tidak Hadir'.",
+            );
+          } else {
+            _showErrorDialog(
+              "Kelas sudah selesai, namun gagal menyimpan status 'Tidak Hadir' ke server.",
+            );
+          }
+
+          setState(() => _isProcessing = false);
+          return;
+        }
+      }
+
+      // 5. Kirim ke Face Recognition API
+
+      // 5. Kirim ke Face Recognition API
       final result = await _faceService.predict(
         imageFile: imageFile,
         name: fileName,

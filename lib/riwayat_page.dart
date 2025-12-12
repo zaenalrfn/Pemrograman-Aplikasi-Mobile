@@ -131,13 +131,16 @@ class _RiwayatPageState extends State<RiwayatPage> {
     // hindari memanggil provider dengan id null
     double percent = 0.0;
     int hadirCount = 0;
+    int tidakHadirCount = 0;
     if (courseId != null && courseId.isNotEmpty) {
       percent = provider.getAttendancePercentage(courseId).clamp(0.0, 1.0);
       hadirCount = provider.getHadirCount(courseId);
+      tidakHadirCount = provider.getTidakHadirCount(courseId);
     }
 
     final persentaseStr = "${(percent * 100).toStringAsFixed(1)}%";
     final jumlahStr = "${hadirCount}x";
+    final tidakHadirStr = "${tidakHadirCount}x";
 
     return _buildKehadiranCard(
       nama: nama,
@@ -146,6 +149,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
       ruang: ruang,
       persentase: persentaseStr,
       jumlah: jumlahStr,
+      tidakHadir: tidakHadirStr,
     );
   }
 
@@ -244,6 +248,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
     required String ruang,
     required String persentase,
     required String jumlah,
+    required String tidakHadir,
   }) {
     double progressValue = 0.0;
     try {
@@ -307,13 +312,25 @@ class _RiwayatPageState extends State<RiwayatPage> {
                   backgroundColor: Colors.white,
                   valueColor: const AlwaysStoppedAnimation(Color(0xFF9B7AFD)),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  "Jumlah Kehadiran: $jumlah",
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF2F2B52),
-                  ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Hadir: $jumlah",
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF2F2B52),
+                      ),
+                    ),
+                    Text(
+                      "Tidak Hadir: $tidakHadir",
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.redAccent,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
