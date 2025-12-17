@@ -1,14 +1,13 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 import 'dart:math' show cos, sqrt, asin, sin, pi;
 
-class GeofenceService {
-  // Lokasi yang diizinkan (ubah sesuai link Google Maps)
-  static const double allowedLatitude = -7.756573132208431;
-  static const double allowedLongitude = 110.34411048115037;
-  static const double radiusInMeters = 1000.0; // radius 100 meter
-  // uty -7.747388626569646, 110.35534568962402
-  // kos -7.756573132208431, 110.34411048115037
+import '../models/attendance_location_model.dart';
 
+class GeofenceService {
   // 🔹 Cek apakah layanan lokasi aktif
   static Future<bool> isLocationServiceEnabled() async {
     return await Geolocator.isLocationServiceEnabled();
@@ -47,11 +46,38 @@ class GeofenceService {
       }
 
       return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        desiredAccuracy:
+            LocationAccuracy.bestForNavigation, // High accuracy needed
       );
     } catch (e) {
-      print('Error getting location: $e');
+      debugPrint('Error getting location: $e');
       return null;
+    }
+  }
+
+  // 🔹 Fetch Locations from API
+  static Future<List<AttendanceLocationModel>> _fetchLocations() async {
+    try {
+      final baseUrl = dotenv.env['API_URL'];
+      final url = Uri.parse('$baseUrl/attendance-locations');
+
+      final response = await http.get(
+        url,
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data
+            .map((json) => AttendanceLocationModel.fromJson(json))
+            .toList();
+      } else {
+        debugPrint("Failed to fetch locations: ${response.statusCode}");
+        return [];
+      }
+    } catch (e) {
+      debugPrint("Exception fetching locations: $e");
+      return [];
     }
   }
 
@@ -81,7 +107,7 @@ class GeofenceService {
     return degree * (pi / 180.0);
   }
 
-  // 🔹 Cek apakah user berada dalam area
+  // 🔹 Cek apakah user berada dalam area SALAH SATU lokasi
   static Future<GeofenceResult> isWithinAllowedArea() async {
     Position? position = await getCurrentPosition();
 
@@ -94,24 +120,66 @@ class GeofenceService {
       );
     }
 
-    double distance = calculateDistance(
-      position.latitude,
-      position.longitude,
-      allowedLatitude,
-      allowedLongitude,
-    );
+    // 1. Fetch Locations Dynamically
+    List<AttendanceLocationModel> locations = await _fetchLocations();
 
-    bool isAllowed = distance <= radiusInMeters;
+    if (locations.isEmpty) {
+      // Fallback or Error if no locations found
+      return GeofenceResult(
+        isAllowed: false,
+        message: 'Gagal mengambil data lokasi absensi dari server.',
+        distance: null,
+      );
+    }
 
-    return GeofenceResult(
-      isAllowed: isAllowed,
-      message: isAllowed
-          ? 'Lokasi Anda valid untuk absensi.'
-          : 'Anda berada ${distance.toStringAsFixed(0)} meter dari lokasi kelas.\nAbsensi hanya bisa dilakukan dalam radius ${radiusInMeters.toInt()} meter.',
-      distance: distance,
-      currentLatitude: position.latitude,
-      currentLongitude: position.longitude,
-    );
+    AttendanceLocationModel? closestLocation;
+    double minDistance = double.infinity;
+    AttendanceLocationModel? matchedLocation;
+
+    // 2. Iterate to find if inside ANY location
+    for (var loc in locations) {
+      double dist = calculateDistance(
+        position.latitude,
+        position.longitude,
+        loc.latitude,
+        loc.longitude,
+      );
+
+      if (dist <= loc.radiusMeters) {
+        matchedLocation = loc;
+        closestLocation = loc;
+        minDistance = dist;
+        break; // Found a valid location, stop searching
+      }
+
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestLocation = loc;
+      }
+    }
+
+    if (matchedLocation != null) {
+      return GeofenceResult(
+        isAllowed: true,
+        message: 'Lokasi valid: ${matchedLocation.name}',
+        distance: minDistance,
+        locationName: matchedLocation.name,
+        currentLatitude: position.latitude,
+        currentLongitude: position.longitude,
+      );
+    } else {
+      String closestName = closestLocation?.name ?? 'Kampus';
+      return GeofenceResult(
+        isAllowed: false,
+        message:
+            'Anda berada ${minDistance.toStringAsFixed(0)} meter dari $closestName.\n'
+            'Absensi hanya bisa dilakukan dalam radius ${closestLocation?.radiusMeters.toInt() ?? 100} meter.',
+        distance: minDistance,
+        locationName: null,
+        currentLatitude: position.latitude,
+        currentLongitude: position.longitude,
+      );
+    }
   }
 
   // 🔹 Buka pengaturan lokasi
@@ -125,11 +193,12 @@ class GeofenceService {
   }
 }
 
-// 🔹 Model hasil geofence
+// 🔹 Model hasil geofenceUpdated
 class GeofenceResult {
   final bool isAllowed;
   final String message;
   final double? distance;
+  final String? locationName; // New field
   final double? currentLatitude;
   final double? currentLongitude;
 
@@ -137,6 +206,7 @@ class GeofenceResult {
     required this.isAllowed,
     required this.message,
     this.distance,
+    this.locationName,
     this.currentLatitude,
     this.currentLongitude,
   });
