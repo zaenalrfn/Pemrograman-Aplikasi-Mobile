@@ -124,10 +124,27 @@ class GeofenceService {
     List<AttendanceLocationModel> locations = await _fetchLocations();
 
     if (locations.isEmpty) {
-      // Fallback or Error if no locations found
+      // Kasus: API berhasil diakses tapi data kosong []
       return GeofenceResult(
         isAllowed: false,
-        message: 'Gagal mengambil data lokasi absensi dari server.',
+        message:
+            'Data lokasi absensi belum tersedia/belum diatur oleh admin. Silakan hubungi IT/Admin.',
+        distance: null,
+      );
+    }
+
+    // Filter lokasi yang koordinatnya valid (tidak 0,0)
+    // Asumsi: latitude/longitude 0.0 dianggap invalid/belum diisi
+    List<AttendanceLocationModel> validLocations = locations.where((loc) {
+      return loc.latitude != 0.0 && loc.longitude != 0.0;
+    }).toList();
+
+    if (validLocations.isEmpty) {
+      // Kasus: Data lokasi ada, tapi koordinatnya masih 0 atau kosong
+      return GeofenceResult(
+        isAllowed: false,
+        message:
+            'Koordinat lokasi absensi belum diatur dengan benar (Latitude/Longitude kosong). Silakan hubungi Admin.',
         distance: null,
       );
     }
@@ -136,8 +153,8 @@ class GeofenceService {
     double minDistance = double.infinity;
     AttendanceLocationModel? matchedLocation;
 
-    // 2. Iterate to find if inside ANY location
-    for (var loc in locations) {
+    // 2. Iterate to find if inside ANY VALID location
+    for (var loc in validLocations) {
       double dist = calculateDistance(
         position.latitude,
         position.longitude,
