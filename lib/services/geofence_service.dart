@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:math' show cos, sqrt, asin, sin, pi;
 
 import '../models/attendance_location_model.dart';
@@ -58,26 +59,55 @@ class GeofenceService {
   // 🔹 Fetch Locations from API
   static Future<List<AttendanceLocationModel>> _fetchLocations() async {
     try {
-      final baseUrl = dotenv.env['API_URL'];
+      final baseUrl = dotenv.env['API_BASE'];
+      // Debug print to check URL
+      debugPrint("Fetching locations from: $baseUrl/attendance-locations");
+
       final url = Uri.parse('$baseUrl/attendance-locations');
+
+      final storage = const FlutterSecureStorage();
+      final token = await storage.read(key: 'token');
+
+      if (token == null) {
+        throw Exception("Token tidak ditemukan (Null). Silakan login ulang.");
+      }
 
       final response = await http.get(
         url,
-        headers: {'Accept': 'application/json'},
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
 
+      debugPrint("Fetch Locations Status: ${response.statusCode}");
+      debugPrint("Fetch Locations Body: ${response.body}");
+
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data
+        final dynamic data = jsonDecode(response.body);
+        List<dynamic> listData = [];
+
+        if (data is List) {
+          listData = data;
+        } else if (data is Map && data.containsKey('data')) {
+          // Handle pagination or wrapper
+          if (data['data'] is List) {
+            listData = data['data'];
+          }
+        }
+
+        return listData
             .map((json) => AttendanceLocationModel.fromJson(json))
             .toList();
       } else {
-        debugPrint("Failed to fetch locations: ${response.statusCode}");
-        return [];
+        throw Exception(
+          "Gagal mengambil data lokasi. Status: ${response.statusCode}. Body: ${response.body}",
+        );
       }
     } catch (e) {
       debugPrint("Exception fetching locations: $e");
-      return [];
+      // Rethrow to be caught by isWithinAllowedArea
+      throw Exception("Error fetching locations: $e");
     }
   }
 
@@ -121,14 +151,24 @@ class GeofenceService {
     }
 
     // 1. Fetch Locations Dynamically
-    List<AttendanceLocationModel> locations = await _fetchLocations();
+    List<AttendanceLocationModel> locations = [];
+    try {
+      locations = await _fetchLocations();
+    } catch (e) {
+      // Return error message captured from Exception
+      return GeofenceResult(
+        isAllowed: false,
+        message: e.toString().replaceAll('Exception: ', ''),
+        distance: null,
+      );
+    }
 
     if (locations.isEmpty) {
       // Kasus: API berhasil diakses tapi data kosong []
       return GeofenceResult(
         isAllowed: false,
         message:
-            'Data lokasi absensi belum tersedia/belum diatur oleh admin. Silakan hubungi IT/Admin.',
+            'Data lokasi absensi kosong (0 lokasi). Silakan hubungi IT/Admin.',
         distance: null,
       );
     }

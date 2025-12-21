@@ -86,8 +86,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 20),
 
                   // 3. SECTION FACE RECOGNITION
-                  _buildFaceRecogCard(),
-
+                  // _buildFaceRecogCard(),
                   const SizedBox(height: 20),
 
                   // 4. SECTION PENGATURAN
@@ -292,112 +291,112 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // Widget Face Recognition
-  Widget _buildFaceRecogCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: const [
-                  Icon(Icons.verified_user_outlined, color: Color(0xFF7463F0)),
-                  SizedBox(width: 10),
-                  Text(
-                    "Status Face Recognition",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2F2B52),
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF00C853),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  "Aktif",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(
-                Icons.camera_front_outlined,
-                color: Color(0xFF7463F0),
-                size: 26,
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Wajah Terdaftar",
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  Text(
-                    "Aktif dan siap digunakan",
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                print("Daftar Ulang Wajah diklik");
-              },
-              icon: const Icon(Icons.camera_alt, color: Colors.white),
-              label: const Text(
-                "Daftar Ulang Wajah",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7463F0),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildFaceRecogCard() {
+  //   return Container(
+  //     padding: const EdgeInsets.all(20),
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(20),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black.withOpacity(0.03),
+  //           blurRadius: 10,
+  //           offset: const Offset(0, 5),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Column(
+  //       children: [
+  //         Row(
+  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //           children: [
+  //             Row(
+  //               children: const [
+  //                 Icon(Icons.verified_user_outlined, color: Color(0xFF7463F0)),
+  //                 SizedBox(width: 10),
+  //                 Text(
+  //                   "Status Face Recognition",
+  //                   style: TextStyle(
+  //                     fontWeight: FontWeight.bold,
+  //                     color: Color(0xFF2F2B52),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //             Container(
+  //               padding: const EdgeInsets.symmetric(
+  //                 horizontal: 12,
+  //                 vertical: 4,
+  //               ),
+  //               decoration: BoxDecoration(
+  //                 color: const Color(0xFF00C853),
+  //                 borderRadius: BorderRadius.circular(12),
+  //               ),
+  //               child: const Text(
+  //                 "Aktif",
+  //                 style: TextStyle(
+  //                   color: Colors.white,
+  //                   fontSize: 11,
+  //                   fontWeight: FontWeight.bold,
+  //                 ),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         const SizedBox(height: 15),
+  //         Row(
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: [
+  //             const Icon(
+  //               Icons.camera_front_outlined,
+  //               color: Color(0xFF7463F0),
+  //               size: 26,
+  //             ),
+  //             const SizedBox(width: 12),
+  //             Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 const Text(
+  //                   "Wajah Terdaftar",
+  //                   style: TextStyle(fontWeight: FontWeight.w600),
+  //                 ),
+  //                 Text(
+  //                   "Aktif dan siap digunakan",
+  //                   style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+  //                 ),
+  //               ],
+  //             ),
+  //           ],
+  //         ),
+  //         const SizedBox(height: 20),
+  //         SizedBox(
+  //           width: double.infinity,
+  //           child: ElevatedButton.icon(
+  //             onPressed: () {
+  //               print("Daftar Ulang Wajah diklik");
+  //             },
+  //             icon: const Icon(Icons.camera_alt, color: Colors.white),
+  //             label: const Text(
+  //               "Daftar Ulang Wajah",
+  //               style: TextStyle(
+  //                 color: Colors.white,
+  //                 fontWeight: FontWeight.w600,
+  //               ),
+  //             ),
+  //             style: ElevatedButton.styleFrom(
+  //               backgroundColor: const Color(0xFF7463F0),
+  //               padding: const EdgeInsets.symmetric(vertical: 14),
+  //               elevation: 2,
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(12),
+  //               ),
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   // Widget Pengaturan
   Widget _buildSettingsCard() {
