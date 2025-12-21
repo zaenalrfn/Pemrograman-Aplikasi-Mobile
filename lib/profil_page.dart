@@ -107,7 +107,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
       // BOTTOM NAVIGATION BAR
       bottomNavigationBar: CustomBottomNav(
-        currentIndex: 2,
+        currentIndex: 3,
         onTap: (index) {
           switch (index) {
             case 0:
@@ -117,7 +117,7 @@ class _ProfilePageState extends State<ProfilePage> {
               Navigator.pushReplacementNamed(context, '/scan');
               break;
             case 2:
-              // Sudah di halaman Profile/Riwayat (sesuaikan index navigasi Anda)
+              Navigator.pushReplacementNamed(context, '/riwayat');
               break;
             case 3:
               Navigator.pushReplacementNamed(context, '/profil');

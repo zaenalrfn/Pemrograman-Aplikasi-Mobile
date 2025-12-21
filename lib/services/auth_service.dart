@@ -89,6 +89,54 @@ class AuthService {
     return null;
   }
 
+  /// NEW: Reset Password
+  /// Returns { 'success': bool, 'message': String }
+  Future<Map<String, dynamic>> resetPassword(
+    String email,
+    String newPassword,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/reset-password'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email,
+          'password': newPassword,
+          'password_confirmation': newPassword,
+        }),
+      );
+
+      final body = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          'success': true,
+          'message': body['message'] ?? 'Berhasil reset password',
+        };
+      } else if (response.statusCode == 422) {
+        // Validation check (e.g. Email not exists)
+        final errors = body['errors'];
+        String msg = body['message'] ?? 'Validasi gagal';
+        if (errors != null && errors is Map) {
+          // Ambil error pertama yang muncul
+          msg = errors.values.first[0];
+        }
+        return {'success': false, 'message': msg};
+      } else {
+        return {
+          'success': false,
+          'message': body['message'] ?? 'Gagal reset password (Server Error)',
+        };
+      }
+    } catch (e) {
+      debugPrint('Reset password error: $e');
+      return {'success': false, 'message': 'Terjadi kesalahan koneksi: $e'};
+    }
+  }
+
   /// Logout: panggil endpoint logout (jika tersedia) lalu hapus storage.
   /// Jika token tidak diberikan, ambil dari storage.
   Future<void> logout([String? token]) async {
