@@ -80,6 +80,24 @@ class AttendanceProvider extends ChangeNotifier {
     });
   }
 
+  // TOTAL PERTEMUAN (Hadir + Sakit + Izin + Alpha/Tidak Hadir)
+  int getTotalMeetingCount(String courseId) {
+    // Ambil semua record attendance untuk course ini
+    final courseAttendances = _attendances
+        .where((a) => a.courseId == courseId)
+        .toList();
+
+    // Pastikan kita menghitung berdasarkan hari yang unik (jika data kotor ada duplikat hari)
+    final uniqueDays = <String>{};
+    for (var a in courseAttendances) {
+      if (a.tanggal != null) {
+        uniqueDays.add(DateFormat('yyyy-MM-dd').format(a.tanggal!));
+      }
+    }
+
+    return uniqueDays.length;
+  }
+
   // JUMLAH TIDAK HADIR per course (NEW)
   int getTidakHadirCount(String courseId) {
     return _attendances

@@ -24,9 +24,10 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ScheduleProvider()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        // ChangeNotifierProvider(create: (_) => AuthProvider()), // HAPUS INI (Redundant)
         ChangeNotifierProvider(create: (_) => AttendanceProvider()),
         ChangeNotifierProvider(create: (_) => SchedulenextcourseProvider()),
+        // Gunakan satu AuthProvider saja yang sekaligus load user
         ChangeNotifierProvider(
           create: (_) =>
               AuthProvider()..loadUserFromStorage(), // muat user bila ada
@@ -46,7 +47,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Aplikasi Absensi Mahasiswa',
       theme: ThemeData(fontFamily: 'Poppins'),
-      home: const LoginPage(),
+      home: const AuthWrapper(),
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case '/beranda':
@@ -59,6 +60,33 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const ScanPage());
         }
         return null;
+      },
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Dengarkan perubahan pada AuthProvider
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        // 1. Jika masih loading data dari storage (splash screen sederhana)
+        if (!auth.isInitialized) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // 2. Jika sudah selesai, cek apakah user login?
+        if (auth.isLoggedIn) {
+          return const BerandaPage();
+        }
+
+        // 3. Jika belum login, tampilkan halaman Login
+        return const LoginPage();
       },
     );
   }

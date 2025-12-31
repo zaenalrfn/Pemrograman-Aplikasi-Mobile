@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'beranda_page.dart';
+import 'reset_password_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -152,7 +153,10 @@ class _LoginPageState extends State<LoginPage> {
                                 )
                               : const Text(
                                   "Masuk",
-                                  style: TextStyle(fontSize: 16),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.white,
+                                  ),
                                 ),
                         ),
                       ),
@@ -162,7 +166,15 @@ class _LoginPageState extends State<LoginPage> {
                         children: [
                           const Text("Lupa Kata Sandi? "),
                           TextButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ResetPasswordPage(),
+                                ),
+                              );
+                            },
                             child: const Text(
                               "Bantuan Masuk",
                               style: TextStyle(color: Color(0xFF7463F0)),

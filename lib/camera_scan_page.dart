@@ -211,7 +211,15 @@ class _CameraScanPageState extends State<CameraScanPage> {
         }
       } else {
         // Wajah tidak dikenali atau error lain
-        _showErrorDialog(result['message'] ?? "Wajah tidak dikenali.");
+        final data = result['data'];
+        String message = result['message'] ?? "Wajah tidak dikenali.";
+
+        if (data != null && data['status'] == 'unknown') {
+          message =
+              "Wajah tidak dikenali.\n\nPastikan wajah terlihat jelas dan pencahayaan cukup.";
+        }
+
+        _showErrorDialog(message);
       }
     } catch (e) {
       debugPrint('Error accessing camera/api: $e');

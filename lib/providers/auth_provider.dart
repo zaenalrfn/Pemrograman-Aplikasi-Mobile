@@ -7,10 +7,12 @@ class AuthProvider extends ChangeNotifier {
 
   UserModel? _user;
   String? _token;
+  bool _isInitialized = false;
 
   UserModel? get user => _user;
   String? get token => _token;
   bool get isLoggedIn => _user != null && _token != null;
+  bool get isInitialized => _isInitialized;
 
   Future<bool> login(String email, String password) async {
     final result = await _authService.login(email, password);
@@ -31,10 +33,16 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> loadUserFromStorage() async {
-    final stored = await _authService.loadUser();
-    if (stored != null) {
-      _user = stored['user'] as UserModel;
-      _token = stored['token'] as String;
+    try {
+      final stored = await _authService.loadUser();
+      if (stored != null) {
+        _user = stored['user'] as UserModel;
+        _token = stored['token'] as String;
+      }
+    } catch (e) {
+      debugPrint('Error loading user from storage: $e');
+    } finally {
+      _isInitialized = true;
       notifyListeners();
     }
   }

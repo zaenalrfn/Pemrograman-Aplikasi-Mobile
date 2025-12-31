@@ -11,6 +11,7 @@ import 'providers/scheduleNextCourse_provider.dart';
 // tambahan import provider
 import '../providers/auth_provider.dart';
 import '../providers/schedule_provider.dart';
+import '../providers/attendance_provider.dart';
 
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key});
@@ -76,6 +77,29 @@ class _ScanPageState extends State<ScanPage> {
   }
 
   Future<void> _handleAbsensi() async {
+    // 1. Cek Batas Pertemuan (14 Kali)
+    final nextCourseProvider = Provider.of<SchedulenextcourseProvider>(
+      context,
+      listen: false,
+    );
+    final nextCourse = nextCourseProvider.nextCourse;
+
+    if (nextCourse != null) {
+      final courseId = nextCourse.courseId ?? nextCourse.course?.id;
+      if (courseId != null) {
+        final attendanceProvider = Provider.of<AttendanceProvider>(
+          context,
+          listen: false,
+        );
+        final meetingCount = attendanceProvider.getTotalMeetingCount(courseId);
+
+        if (meetingCount >= 14) {
+          _showLimitReachedDialog();
+          return;
+        }
+      }
+    }
+
     setState(() => _isCheckingLocation = true);
 
     GeofenceResult result = await GeofenceService.isWithinAllowedArea();
@@ -185,6 +209,77 @@ class _ScanPageState extends State<ScanPage> {
                     ),
                   ),
                 ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showLimitReachedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.event_busy,
+                  size: 30,
+                  color: Colors.orange.shade400,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Batas Absensi Tercapai',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2F2B52),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Mata kuliah ini sudah mencapai 14 pertemuan. Anda tidak dapat melakukan absensi lagi.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF2F2B52),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF7165E0),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Mengerti',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
