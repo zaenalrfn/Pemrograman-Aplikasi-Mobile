@@ -93,6 +93,18 @@ class _BerandaPageState extends State<BerandaPage> {
       'id_ID',
     ).format(DateTime.now());
 
+    var hour = DateTime.now().hour;
+    String greeting;
+    if (hour < 11) {
+      greeting = 'Selamat pagi';
+    } else if (hour < 15) {
+      greeting = 'Selamat siang';
+    } else if (hour < 18) {
+      greeting = 'Selamat sore';
+    } else {
+      greeting = 'Selamat malam';
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       body: SafeArea(
@@ -124,7 +136,7 @@ class _BerandaPageState extends State<BerandaPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Selamat pagi, $name",
+                                "$greeting, $name",
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w500,

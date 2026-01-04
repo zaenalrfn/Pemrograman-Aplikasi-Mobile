@@ -1,5 +1,5 @@
-import 'package:absensi_mahasiswa/models/schedule_model.dart';
-import 'package:absensi_mahasiswa/providers/auth_provider.dart';
+import 'package:passion/models/schedule_model.dart';
+import 'package:passion/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
