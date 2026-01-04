@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:absensi_mahasiswa/services/auth_service.dart';
+import 'package:passion/services/auth_service.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key});

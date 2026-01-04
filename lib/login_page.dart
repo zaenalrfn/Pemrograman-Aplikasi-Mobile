@@ -1,4 +1,4 @@
-import 'package:absensi_mahasiswa/providers/auth_provider.dart';
+import 'package:passion/providers/auth_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -67,7 +67,11 @@ class _LoginPageState extends State<LoginPage> {
         child: Column(
           children: [
             const SizedBox(height: 40),
-            const CircleAvatar(radius: 50, backgroundColor: Colors.white),
+            const CircleAvatar(
+              radius: 50,
+              backgroundColor: Colors.white,
+              backgroundImage: AssetImage('assets/images/logo.png'),
+            ),
             const SizedBox(height: 40),
             Expanded(
               child: Container(

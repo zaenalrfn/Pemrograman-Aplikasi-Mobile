@@ -15,18 +15,37 @@ class ScheduleProvider extends ChangeNotifier {
   }
 
   String normalizeHari(String hari) {
-    return hari.toLowerCase().replaceAll("'", "").replaceAll("’", "").replaceAll("`", "").trim();
+    return hari
+        .toLowerCase()
+        .replaceAll("'", "")
+        .replaceAll("’", "")
+        .replaceAll("`", "")
+        .trim();
   }
 
-  Future<void> loadTodaySchedules(String userId, {bool forceReload = false}) async {
+  String? lastUserId;
+
+  Future<void> loadTodaySchedules(
+    String userId, {
+    bool forceReload = false,
+  }) async {
     final now = DateTime.now();
     final formatter = DateFormat('EEEE', 'id_ID');
     final today = formatter.format(now);
     final todayNormalized = normalizeHari(today);
 
-    if (!forceReload && todaySchedules.isNotEmpty && lastLoadedDate != null &&
+    // Cek apakah data masih valid (tanggal sama DAN user sama)
+    bool isSameDate =
+        lastLoadedDate != null &&
         DateFormat('yyyy-MM-dd').format(lastLoadedDate!) ==
-            DateFormat('yyyy-MM-dd').format(now)) return;
+            DateFormat('yyyy-MM-dd').format(now);
+
+    bool isSameUser = lastUserId == userId;
+
+    // Jika tidak dipaksa reload, tanggal sama, user sama, dan data ada -> return (pakai cache)
+    if (!forceReload && todaySchedules.isNotEmpty && isSameDate && isSameUser) {
+      return;
+    }
 
     isLoading = true;
     notifyListeners();
@@ -40,13 +59,16 @@ class ScheduleProvider extends ChangeNotifier {
       }).toList();
 
       filtered.sort((a, b) {
-        final aTime = a.jamMulai ?? DateTime(now.year, now.month, now.day, 0, 0);
-        final bTime = b.jamMulai ?? DateTime(now.year, now.month, now.day, 0, 0);
+        final aTime =
+            a.jamMulai ?? DateTime(now.year, now.month, now.day, 0, 0);
+        final bTime =
+            b.jamMulai ?? DateTime(now.year, now.month, now.day, 0, 0);
         return aTime.compareTo(bTime);
       });
 
       todaySchedules = filtered;
       lastLoadedDate = now;
+      lastUserId = userId; // Simpan user ID untuk validasi berikutnya
     } catch (e) {
       todaySchedules = [];
     } finally {
@@ -56,32 +78,31 @@ class ScheduleProvider extends ChangeNotifier {
   }
 
   ScheduleModel? get nextSchedule {
-  final now = DateTime.now();
+    final now = DateTime.now();
 
-  if (todaySchedules.isEmpty) return null;
+    if (todaySchedules.isEmpty) return null;
 
-  // 1) cari yang sedang berjalan
-  for (var schedule in todaySchedules) {
-    final start = schedule.jamMulai;
-    final end = schedule.jamSelesai;
-    if (start != null && end != null) {
-      if (!now.isBefore(start) && !now.isAfter(end)) {
-        // start <= now <= end
+    // 1) cari yang sedang berjalan
+    for (var schedule in todaySchedules) {
+      final start = schedule.jamMulai;
+      final end = schedule.jamSelesai;
+      if (start != null && end != null) {
+        if (!now.isBefore(start) && !now.isAfter(end)) {
+          // start <= now <= end
+          return schedule;
+        }
+      }
+    }
+
+    // 2) cari yang mulai setelah sekarang (upcoming)
+    for (var schedule in todaySchedules) {
+      final start = schedule.jamMulai;
+      if (start != null && start.isAfter(now)) {
         return schedule;
       }
     }
+
+    // 3) kalau semua sudah lewat, kembalikan jadwal terakhir hari ini
+    return todaySchedules.last;
   }
-
-  // 2) cari yang mulai setelah sekarang (upcoming)
-  for (var schedule in todaySchedules) {
-    final start = schedule.jamMulai;
-    if (start != null && start.isAfter(now)) {
-      return schedule;
-    }
-  }
-
-  // 3) kalau semua sudah lewat, kembalikan jadwal terakhir hari ini
-  return todaySchedules.last;
-}
-
 }
