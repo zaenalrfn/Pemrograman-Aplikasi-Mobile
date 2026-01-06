@@ -374,21 +374,21 @@ class _CameraScanPageState extends State<CameraScanPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Absensi Gagal',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF2F2B52),
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
               const SizedBox(height: 12),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF2F2B52),
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   height: 1.5,
                 ),
               ),
@@ -423,8 +423,11 @@ class _CameraScanPageState extends State<CameraScanPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF2F2B52);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           // Header
@@ -555,9 +558,9 @@ class _CameraScanPageState extends State<CameraScanPage> {
                   ),
 
                   const SizedBox(height: 30),
-                  const Text(
+                  Text(
                     'Posisikan wajah Anda di dalam frame',
-                    style: TextStyle(color: Color(0xFF2F2B52), fontSize: 14),
+                    style: TextStyle(color: textColor, fontSize: 14),
                   ),
                   const SizedBox(height: 24),
 

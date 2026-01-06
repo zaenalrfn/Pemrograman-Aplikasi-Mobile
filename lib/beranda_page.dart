@@ -21,7 +21,11 @@ class _BerandaPageState extends State<BerandaPage> {
   @override
   void initState() {
     super.initState();
-    loadUserAndSchedules();
+
+    // Pindahkan load ke post frame callback untuk menghindari masalah setState/notifyListeners saat build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadUserAndSchedules();
+    });
 
     // Auto-refresh tiap 1 menit
     _timer = Timer.periodic(const Duration(minutes: 1), (_) async {
@@ -46,14 +50,14 @@ class _BerandaPageState extends State<BerandaPage> {
 
   Future<void> loadUserAndSchedules() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.loadUserFromStorage();
-
+    // 1. Cek User Login (Data sudah ada dari AuthWrapper, tidak perlu load ulang)
+    // Jika authProvider belum ready (jarang terjadi di sini), return.
     if (!authProvider.isLoggedIn) return;
 
     final user = authProvider.user!;
     final token = authProvider.token!;
 
-    // Init ScheduleProvider
+    // 2. Init ScheduleProvider
     final scheduleProvider = Provider.of<ScheduleProvider>(
       context,
       listen: false,
@@ -61,13 +65,19 @@ class _BerandaPageState extends State<BerandaPage> {
     scheduleProvider.init(token);
 
     // Load schedules
+    // 3. Load schedules
+    // Gunakan try-catch di sini jika perlu, tapi Provider sudah handle error state.
     await scheduleProvider.loadTodaySchedules(user.id);
 
-    // Set nextCourse di provider
+    // PENTING: Cek mounted setelah await agar tidak crash jika user pindah halaman
+    if (!mounted) return;
+
+    // 4. Set nextCourse di provider
     final nextCourseProvider = Provider.of<SchedulenextcourseProvider>(
       context,
       listen: false,
     );
+    // Pastikan scheduleProvider.nextSchedule valid
     nextCourseProvider.setNextCourse(scheduleProvider.nextSchedule);
 
     if (mounted) setState(() {});
@@ -105,8 +115,11 @@ class _BerandaPageState extends State<BerandaPage> {
       greeting = 'Selamat malam';
     }
 
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF2F2B52);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: scheduleProvider.isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -137,26 +150,37 @@ class _BerandaPageState extends State<BerandaPage> {
                             children: [
                               Text(
                                 "$greeting, $name",
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w500,
-                                  color: Color(0xFF2F2B52),
+                                  color: textColor,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 tanggal,
-                                style: const TextStyle(
-                                  color: Color(0xFF2F2B52),
+                                style: TextStyle(
+                                  color: textColor,
                                   fontSize: 16,
                                 ),
                               ),
                             ],
                           ),
-                          const CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Color(0xFFEBEBFF),
-                            child: Icon(Icons.person, color: Color(0xFF7463F0)),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pushReplacementNamed(
+                                context,
+                                '/profil',
+                              );
+                            },
+                            child: const CircleAvatar(
+                              radius: 20,
+                              backgroundColor: Color(0xFFEBEBFF),
+                              child: Icon(
+                                Icons.person,
+                                color: Color(0xFF7463F0),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -168,19 +192,19 @@ class _BerandaPageState extends State<BerandaPage> {
                         _noCourseCard(),
                       const SizedBox(height: 24),
                       // Title Jadwal
-                      const Row(
+                      Row(
                         children: [
                           Icon(
                             Icons.calendar_today_rounded,
-                            color: Color(0xFF2F2B52),
+                            color: textColor,
                             size: 24,
                           ),
-                          SizedBox(width: 14),
+                          const SizedBox(width: 14),
                           Text(
                             "Jadwal Hari Ini",
                             style: TextStyle(
                               fontSize: 20,
-                              color: Color(0xFF2F2B52),
+                              color: textColor,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -188,7 +212,38 @@ class _BerandaPageState extends State<BerandaPage> {
                       ),
                       const SizedBox(height: 16),
                       // Jadwal List
-                      if (todaySchedules.isEmpty)
+                      if (scheduleProvider.error != null)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              children: [
+                                const Icon(
+                                  Icons.error_outline,
+                                  color: Colors.red,
+                                  size: 40,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "Gagal memuat jadwal:\n${scheduleProvider.error}",
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.red),
+                                ),
+                                const SizedBox(height: 8),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    scheduleProvider.loadTodaySchedules(
+                                      authProvider.user!.id,
+                                      forceReload: true,
+                                    );
+                                  },
+                                  child: const Text("Coba Lagi"),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      else if (todaySchedules.isEmpty)
                         const Center(
                           child: Padding(
                             padding: EdgeInsets.all(16),
@@ -240,6 +295,9 @@ class _BerandaPageState extends State<BerandaPage> {
     Color warnaStatus = Colors.grey;
     Widget? tombol;
 
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF2F2B52);
+
     if (jamMulai != null && jamSelesai != null) {
       if (now.isAfter(jamMulai) && now.isBefore(jamSelesai)) {
         status = "Absen Dimulai";
@@ -275,7 +333,7 @@ class _BerandaPageState extends State<BerandaPage> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -295,10 +353,10 @@ class _BerandaPageState extends State<BerandaPage> {
               Expanded(
                 child: Text(
                   jadwal.course?.namaMk ?? '-',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF2F2B52),
+                    color: textColor,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -322,21 +380,22 @@ class _BerandaPageState extends State<BerandaPage> {
           const SizedBox(height: 4),
           Text(
             "${jadwal.course?.kelas ?? '-'} · ${jadwal.course?.lecturer?.name ?? '-'} · ${jadwal.course?.sks ?? 0} SKS",
-            style: const TextStyle(color: Color(0xFF2F2B52)),
+            style: TextStyle(color: textColor),
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.access_time, size: 18, color: Color(0xFF2F2B52)),
+              Icon(Icons.access_time, size: 18, color: textColor),
               const SizedBox(width: 6),
               Text(
                 "${jadwal.jamMulai?.hour.toString().padLeft(2, '0')}:${jadwal.jamMulai?.minute.toString().padLeft(2, '0')} - "
                 "${jadwal.jamSelesai?.hour.toString().padLeft(2, '0')}:${jadwal.jamSelesai?.minute.toString().padLeft(2, '0')}",
+                style: TextStyle(color: textColor),
               ),
               const SizedBox(width: 16),
-              const Icon(Icons.location_on, size: 18, color: Color(0xFF2F2B52)),
+              Icon(Icons.location_on, size: 18, color: textColor),
               const SizedBox(width: 6),
-              Text(jadwal.ruangan ?? '-'),
+              Text(jadwal.ruangan ?? '-', style: TextStyle(color: textColor)),
             ],
           ),
           if (tombol != null) ...[const SizedBox(height: 12), tombol],

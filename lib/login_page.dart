@@ -17,6 +17,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool isLoading = false;
+  bool _obscurePassword = true;
 
   final storage = const FlutterSecureStorage();
   final String? baseUrl = dotenv.env['API_BASE'];
@@ -61,6 +62,16 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDarkMode
+        ? Theme.of(context).cardColor
+        : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final inputFillColor = isDarkMode
+        ? const Color(0xFF2A2A35)
+        : const Color(0xFFF5F5FF);
+    final hintColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
+
     return Scaffold(
       backgroundColor: const Color(0xFF7463F0),
       body: SafeArea(
@@ -76,9 +87,9 @@ class _LoginPageState extends State<LoginPage> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: containerColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(40),
                     topRight: Radius.circular(40),
                   ),
@@ -91,11 +102,12 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         "Hai, senang melihatmu lagi!",
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
+                          color: textColor,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -107,10 +119,12 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 32),
                       TextField(
                         controller: emailController,
+                        style: TextStyle(color: textColor),
                         decoration: InputDecoration(
                           hintText: "Email",
+                          hintStyle: TextStyle(color: hintColor),
                           filled: true,
-                          fillColor: const Color(0xFFF5F5FF),
+                          fillColor: inputFillColor,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 14,
@@ -124,11 +138,13 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: passwordController,
-                        obscureText: true,
+                        obscureText: _obscurePassword,
+                        style: TextStyle(color: textColor),
                         decoration: InputDecoration(
                           hintText: "Kata Sandi",
+                          hintStyle: TextStyle(color: hintColor),
                           filled: true,
-                          fillColor: const Color(0xFFF5F5FF),
+                          fillColor: inputFillColor,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 14,
@@ -137,8 +153,22 @@ class _LoginPageState extends State<LoginPage> {
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
                         ),
                       ),
+
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
@@ -168,7 +198,10 @@ class _LoginPageState extends State<LoginPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text("Lupa Kata Sandi? "),
+                          Text(
+                            "Lupa Kata Sandi? ",
+                            style: TextStyle(color: textColor),
+                          ),
                           TextButton(
                             onPressed: () {
                               Navigator.push(

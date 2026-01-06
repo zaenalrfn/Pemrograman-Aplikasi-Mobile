@@ -1,35 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:passion/services/auth_service.dart';
+import 'package:provider/provider.dart';
+import 'package:passion/providers/auth_provider.dart';
 
-class ResetPasswordPage extends StatefulWidget {
-  const ResetPasswordPage({super.key});
+class ChangePasswordPage extends StatefulWidget {
+  const ChangePasswordPage({super.key});
 
   @override
-  State<ResetPasswordPage> createState() => _ResetPasswordPageState();
+  State<ChangePasswordPage> createState() => _ChangePasswordPageState();
 }
 
-class _ResetPasswordPageState extends State<ResetPasswordPage> {
+class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final _currentPasswordController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
   bool _isLoading = false;
-  final AuthService _authService = AuthService();
+  bool _obscureCurrent = true;
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
 
-  Future<void> _handleReset() async {
+  @override
+  void dispose() {
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
-      // Panggil service reset password
-      print("Resetting password for: ${_emailController.text}");
-      final result = await _authService.resetPassword(
-        _emailController.text.trim(),
-        _newPasswordController.text.trim(),
+      final authProvider = context.read<AuthProvider>();
+      final result = await authProvider.updatePassword(
+        _currentPasswordController.text,
+        _newPasswordController.text,
+        _confirmPasswordController.text,
       );
 
       if (!mounted) return;
@@ -37,18 +47,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       if (result['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              result['message'] ??
-                  "Berhasil mengubah kata sandi! Silakan login.",
-            ),
+            content: Text(result['message'] ?? "Password berhasil diubah"),
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context); // Kembali ke Login Page
+        Navigator.pop(context); // Kembali
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message'] ?? "Gagal mengubah kata sandi."),
+            content: Text(result['message'] ?? "Gagal mengubah password"),
             backgroundColor: Colors.red,
           ),
         );
@@ -65,25 +72,25 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     }
   }
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _newPasswordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
-
-  // Helper untuk membuat InputDecoration konsisten
   InputDecoration _buildInputDecoration(
     String label,
     IconData icon,
     Color fillColor,
     Color hintColor,
+    bool isObscure,
+    VoidCallback toggleObscure,
   ) {
     return InputDecoration(
       labelText: label,
       labelStyle: TextStyle(color: hintColor),
       prefixIcon: Icon(icon, color: const Color(0xFF7463F0)),
+      suffixIcon: IconButton(
+        icon: Icon(
+          isObscure ? Icons.visibility_off : Icons.visibility,
+          color: Colors.grey,
+        ),
+        onPressed: toggleObscure,
+      ),
       filled: true,
       fillColor: fillColor,
       border: OutlineInputBorder(
@@ -119,7 +126,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          "Lupa Kata Sandi",
+          "Ganti Kata Sandi",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
@@ -133,7 +140,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: containerColor,
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -146,7 +153,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Reset Password",
+                          "Update Password",
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -155,52 +162,49 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         ),
                         const SizedBox(height: 10),
                         const Text(
-                          "Masukkan email Anda dan buat kata sandi baru untuk akun Anda.",
+                          "Pastikan password baru Anda aman dan mudah diingat.",
                           style: TextStyle(color: Colors.grey, height: 1.5),
                         ),
                         const SizedBox(height: 30),
 
-                        // Input Email
+                        // Current Password
                         TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
+                          controller: _currentPasswordController,
+                          obscureText: _obscureCurrent,
                           decoration: _buildInputDecoration(
-                            "Email Terdaftar",
-                            Icons.email_outlined,
+                            "Kata Sandi Saat Ini",
+                            Icons.lock,
                             inputFillColor,
                             hintColor ?? Colors.grey,
+                            _obscureCurrent,
+                            () => setState(
+                              () => _obscureCurrent = !_obscureCurrent,
+                            ),
                           ),
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return "Email wajib diisi";
-                            }
-                            if (!RegExp(
-                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                            ).hasMatch(value)) {
-                              return "Format email tidak valid";
-                            }
+                            if (value == null || value.isEmpty)
+                              return "Wajib diisi";
                             return null;
                           },
                         ),
                         const SizedBox(height: 20),
 
-                        // Input Password Baru
+                        // New Password
                         TextFormField(
                           controller: _newPasswordController,
-                          obscureText: true,
+                          obscureText: _obscureNew,
                           decoration: _buildInputDecoration(
                             "Kata Sandi Baru",
                             Icons.lock_outline,
                             inputFillColor,
                             hintColor ?? Colors.grey,
+                            _obscureNew,
+                            () => setState(() => _obscureNew = !_obscureNew),
                           ),
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return "Kata sandi baru wajib diisi";
-                            }
-                            if (value.length < 8) {
-                              return "Minimal 8 karakter";
-                            }
+                            if (value == null || value.isEmpty)
+                              return "Wajib diisi";
+                            if (value.length < 8) return "Minimal 8 karakter";
                             return null;
                           },
                         ),
@@ -209,32 +213,33 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         // Confirm Password
                         TextFormField(
                           controller: _confirmPasswordController,
-                          obscureText: true,
+                          obscureText: _obscureConfirm,
                           decoration: _buildInputDecoration(
                             "Konfirmasi Kata Sandi",
                             Icons.lock_reset,
                             inputFillColor,
                             hintColor ?? Colors.grey,
+                            _obscureConfirm,
+                            () => setState(
+                              () => _obscureConfirm = !_obscureConfirm,
+                            ),
                           ),
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return "Konfirmasi kata sandi wajib diisi";
-                            }
-                            if (value != _newPasswordController.text) {
-                              return "Kata sandi tidak cocok";
-                            }
+                            if (value == null || value.isEmpty)
+                              return "Wajib diisi";
+                            if (value != _newPasswordController.text)
+                              return "Password tidak cocok";
                             return null;
                           },
                         ),
 
                         const SizedBox(height: 40),
 
-                        // Button Submit
                         SizedBox(
                           width: double.infinity,
                           height: 50,
                           child: ElevatedButton(
-                            onPressed: _isLoading ? null : _handleReset,
+                            onPressed: _isLoading ? null : _handleSubmit,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF7463F0),
                               shape: RoundedRectangleBorder(
@@ -247,7 +252,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                     color: Colors.white,
                                   )
                                 : const Text(
-                                    "Simpan Kata Sandi",
+                                    "Simpan Perubahan",
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,

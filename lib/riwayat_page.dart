@@ -40,9 +40,11 @@ class _RiwayatPageState extends State<RiwayatPage> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AttendanceProvider>();
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF2F2B52);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F6FF),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: const Color(0xFF9B7AFD),
         elevation: 0,
@@ -62,12 +64,12 @@ class _RiwayatPageState extends State<RiwayatPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           "Daftar Kehadiran",
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF2F2B52),
+                            color: textColor,
                           ),
                         ),
                         const SizedBox(height: 15),
@@ -211,7 +213,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -257,11 +259,14 @@ class _RiwayatPageState extends State<RiwayatPage> {
       progressValue = 0.0;
     }
 
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF2F2B52);
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -276,22 +281,24 @@ class _RiwayatPageState extends State<RiwayatPage> {
         children: [
           Text(
             nama,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF2F2B52),
+              color: textColor,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             "$jadwal  •  $sks  •  📍 $ruang",
-            style: const TextStyle(color: Color(0xFF2F2B52), fontSize: 13),
+            style: TextStyle(color: textColor, fontSize: 13),
           ),
           Container(
             margin: const EdgeInsets.only(top: 10),
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFE9E2FF),
+              color: isDarkMode
+                  ? const Color(0xFFE9E2FF).withOpacity(0.1)
+                  : const Color(0xFFE9E2FF),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -299,10 +306,10 @@ class _RiwayatPageState extends State<RiwayatPage> {
               children: [
                 Text(
                   persentase,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF2F2B52),
+                    color: textColor,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -318,10 +325,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                   children: [
                     Text(
                       "Hadir: $jumlah",
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF2F2B52),
-                      ),
+                      style: TextStyle(fontSize: 12, color: textColor),
                     ),
                     Text(
                       "Tidak Hadir: $tidakHadir",
@@ -353,6 +357,9 @@ class _HeaderItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF2F2B52);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -362,8 +369,8 @@ class _HeaderItem extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               title,
-              style: const TextStyle(
-                color: Color(0xFF2F2B52),
+              style: TextStyle(
+                color: textColor,
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
@@ -373,9 +380,9 @@ class _HeaderItem extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
-            color: Color(0xFF2F2B52),
+            color: textColor,
             fontWeight: FontWeight.w500,
           ),
         ),

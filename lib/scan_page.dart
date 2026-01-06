@@ -142,21 +142,22 @@ class _ScanPageState extends State<ScanPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Lokasi Tidak Valid',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF2F2B52),
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
+              const SizedBox(height: 12),
               const SizedBox(height: 12),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF2F2B52),
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   height: 1.5,
                 ),
               ),
@@ -241,21 +242,21 @@ class _ScanPageState extends State<ScanPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Batas Absensi Tercapai',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF2F2B52),
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Mata kuliah ini sudah mencapai 14 pertemuan. Anda tidak dapat melakukan absensi lagi.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF2F2B52),
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   height: 1.5,
                 ),
               ),
@@ -297,6 +298,9 @@ class _ScanPageState extends State<ScanPage> {
     String status = "Belum Mulai";
     Color warnaStatus = Colors.grey;
 
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF2F2B52);
+
     if (jamMulai != null && jamSelesai != null) {
       if (now.isAfter(jamMulai) && now.isBefore(jamSelesai)) {
         status = "Absen Dimulai";
@@ -308,7 +312,7 @@ class _ScanPageState extends State<ScanPage> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: FutureBuilder<ScanData>(
         future: scanDataFuture,
         builder: (context, snapshot) {
@@ -353,7 +357,7 @@ class _ScanPageState extends State<ScanPage> {
                             child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: Theme.of(context).cardColor,
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
@@ -381,10 +385,10 @@ class _ScanPageState extends State<ScanPage> {
                                           nextCourse?.course?.namaMk ?? '-',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w500,
-                                            color: Color(0xFF2F2B52),
+                                            color: textColor,
                                           ),
                                         ),
                                       ),
@@ -417,9 +421,9 @@ class _ScanPageState extends State<ScanPage> {
 
                                   Text(
                                     "${nextCourse?.course?.kelas ?? '-'} • ${nextCourse?.course?.lecturer?.name ?? '-'} • ${nextCourse?.course?.sks ?? '-'} SKS",
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 12,
-                                      color: Color(0xFF2F2B52),
+                                      color: textColor,
                                     ),
                                   ),
 
@@ -430,10 +434,10 @@ class _ScanPageState extends State<ScanPage> {
                                   // =============================
                                   Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         Icons.access_time,
                                         size: 16,
-                                        color: Color(0xFF2F2B52),
+                                        color: textColor,
                                       ),
                                       const SizedBox(width: 6),
 
@@ -444,19 +448,19 @@ class _ScanPageState extends State<ScanPage> {
                                           "${nextCourse?.jamSelesai?.hour.toString().padLeft(2, '0') ?? '-'}:${nextCourse?.jamSelesai?.minute.toString().padLeft(2, '0') ?? '-'}",
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 12,
-                                            color: Color(0xFF2F2B52),
+                                            color: textColor,
                                           ),
                                         ),
                                       ),
 
                                       const SizedBox(width: 16),
 
-                                      const Icon(
+                                      Icon(
                                         Icons.location_on_outlined,
                                         size: 16,
-                                        color: Color(0xFF2F2B52),
+                                        color: textColor,
                                       ),
                                       const SizedBox(width: 6),
 
@@ -465,9 +469,9 @@ class _ScanPageState extends State<ScanPage> {
                                           nextCourse?.ruangan ?? '-',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 12,
-                                            color: Color(0xFF2F2B52),
+                                            color: textColor,
                                           ),
                                         ),
                                       ),
@@ -506,21 +510,21 @@ class _ScanPageState extends State<ScanPage> {
                         ),
                       ),
                       const SizedBox(height: 30),
-                      const Text(
+                      Text(
                         "Siap untuk Absensi?",
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF2F2B52),
+                          color: textColor,
                         ),
                       ),
                       const SizedBox(height: 12),
-                      const Text(
+                      Text(
                         "Pastikan wajah Anda terlihat jelas dan Anda\nberada di area kelas yang benar",
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 14,
-                          color: Color(0xFF2F2B52),
+                          color: textColor,
                           height: 1.5,
                         ),
                       ),
@@ -620,7 +624,10 @@ class _ScanPageState extends State<ScanPage> {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
           ),
         ),
       ],

@@ -8,6 +8,7 @@ class ScheduleProvider extends ChangeNotifier {
 
   List<ScheduleModel> todaySchedules = [];
   bool isLoading = false;
+  String? error;
   DateTime? lastLoadedDate;
 
   void init(String token) {
@@ -48,6 +49,7 @@ class ScheduleProvider extends ChangeNotifier {
     }
 
     isLoading = true;
+    error = null;
     notifyListeners();
 
     try {
@@ -70,6 +72,8 @@ class ScheduleProvider extends ChangeNotifier {
       lastLoadedDate = now;
       lastUserId = userId; // Simpan user ID untuk validasi berikutnya
     } catch (e) {
+      debugPrint("Error loading schedules: $e");
+      error = e.toString();
       todaySchedules = [];
     } finally {
       isLoading = false;

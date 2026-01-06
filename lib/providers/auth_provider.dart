@@ -25,6 +25,25 @@ class AuthProvider extends ChangeNotifier {
     return false;
   }
 
+  Future<Map<String, dynamic>> updatePassword(
+    String currentPassword,
+    String newPassword,
+    String confirmPassword,
+  ) async {
+    if (_token == null) {
+      return {
+        'success': false,
+        'message': 'Token tidak ditemukan. Silakan login ulang.',
+      };
+    }
+    return await _authService.updatePassword(
+      _token!,
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    );
+  }
+
   Future<void> logout() async {
     if (_token != null) await _authService.logout(_token!);
     _user = null;

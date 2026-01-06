@@ -137,6 +137,51 @@ class AuthService {
     }
   }
 
+  /// Update Password (Authenticated)
+  /// Returns { 'success': bool, 'message': String }
+  Future<Map<String, dynamic>> updatePassword(
+    String token,
+    String currentPassword,
+    String newPassword,
+    String confirmPassword,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/update-password'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'current_password': currentPassword,
+          'password': newPassword,
+          'password_confirmation': confirmPassword,
+        }),
+      );
+
+      final body = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': body['message'] ?? 'Password updated successfully',
+        };
+      } else {
+        // Validation check
+        final errors = body['errors'];
+        String msg = body['message'] ?? 'Failed to update password';
+        if (errors != null && errors is Map) {
+          msg = errors.values.first[0];
+        }
+        return {'success': false, 'message': msg};
+      }
+    } catch (e) {
+      debugPrint('Update password error: $e');
+      return {'success': false, 'message': 'Terjadi kesalahan koneksi: $e'};
+    }
+  }
+
   /// Logout: panggil endpoint logout (jika tersedia) lalu hapus storage.
   /// Jika token tidak diberikan, ambil dari storage.
   Future<void> logout([String? token]) async {

@@ -8,11 +8,15 @@ import 'providers/schedule_provider.dart';
 import 'providers/scheduleNextCourse_provider.dart';
 import 'providers/attendance_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/theme_provider.dart';
 
 import 'profil_page.dart';
 import 'beranda_page.dart';
 import 'riwayat_page.dart';
 import 'scan_page.dart';
+import 'settings_page.dart';
+import 'change_password_page.dart';
+import 'app_updates_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +36,7 @@ void main() async {
           create: (_) =>
               AuthProvider()..loadUserFromStorage(), // muat user bila ada
         ),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: const MyApp(),
     ),
@@ -43,23 +48,59 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Aplikasi Absensi Mahasiswa',
-      theme: ThemeData(fontFamily: 'Poppins'),
-      home: const AuthWrapper(),
-      onGenerateRoute: (settings) {
-        switch (settings.name) {
-          case '/beranda':
-            return MaterialPageRoute(builder: (_) => const BerandaPage());
-          case '/riwayat':
-            return MaterialPageRoute(builder: (_) => const RiwayatPage());
-          case '/profil':
-            return MaterialPageRoute(builder: (_) => const ProfilePage());
-          case '/scan':
-            return MaterialPageRoute(builder: (_) => const ScanPage());
-        }
-        return null;
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Aplikasi Absensi Mahasiswa',
+          themeMode: themeProvider.themeMode,
+          theme: ThemeData(
+            fontFamily: 'Poppins',
+            brightness: Brightness.light,
+            scaffoldBackgroundColor: const Color(0xFFF5F6FA),
+            colorScheme: ColorScheme.fromSwatch(
+              primarySwatch: Colors.deepPurple,
+              brightness: Brightness.light,
+            ).copyWith(secondary: const Color(0xFF00C853)),
+          ),
+          darkTheme: ThemeData(
+            fontFamily: 'Poppins',
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: const Color(0xFF121212),
+            colorScheme:
+                ColorScheme.fromSwatch(
+                  primarySwatch: Colors.deepPurple,
+                  brightness: Brightness.dark,
+                ).copyWith(
+                  secondary: const Color(0xFF00C853),
+                  surface: const Color(0xFF1E1E1E), // Card color usually
+                ),
+          ),
+          home: const AuthWrapper(),
+          onGenerateRoute: (settings) {
+            switch (settings.name) {
+              case '/beranda':
+                return MaterialPageRoute(builder: (_) => const BerandaPage());
+              case '/riwayat':
+                return MaterialPageRoute(builder: (_) => const RiwayatPage());
+              case '/profil':
+                return MaterialPageRoute(builder: (_) => const ProfilePage());
+              case '/scan':
+                return MaterialPageRoute(builder: (_) => const ScanPage());
+              case '/settings':
+                return MaterialPageRoute(builder: (_) => const SettingsPage());
+              case '/change-password':
+                return MaterialPageRoute(
+                  builder: (_) => const ChangePasswordPage(),
+                );
+              case '/app-updates':
+                return MaterialPageRoute(
+                  builder: (_) => const AppUpdatesPage(),
+                );
+            }
+            return null;
+          },
+        );
       },
     );
   }

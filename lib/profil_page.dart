@@ -62,14 +62,14 @@ class _ProfilePageState extends State<ProfilePage> {
     final user = authProvider.user;
 
     final userName = user?.name ?? _fallbackName;
-    final userNim = user?.nim ?? user?.nim?.toString() ?? _fallbackNim;
+    final userNim = user?.nim ?? _fallbackNim;
     final userSemester = user?.semester ?? _fallbackSemester;
     final userProdi =
         user?.program_studi ?? user?.program_studi ?? _fallbackProdi;
     final userEmail = user?.email ?? _fallbackEmail;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -231,7 +231,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -266,10 +266,12 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2F2B52),
+                  color:
+                      Theme.of(context).textTheme.bodyLarge?.color ??
+                      const Color(0xFF2F2B52),
                 ),
               ),
               const SizedBox(height: 4),
@@ -277,7 +279,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 value,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey.shade600,
+                  color:
+                      Theme.of(context).textTheme.bodyMedium?.color ??
+                      Colors.grey.shade600,
                   decoration: title == "Email"
                       ? TextDecoration.underline
                       : TextDecoration.none,
@@ -399,24 +403,45 @@ class _ProfilePageState extends State<ProfilePage> {
   // }
 
   // Widget Pengaturan
+  // Widget Pengaturan
   Widget _buildSettingsCard() {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         children: [
-          _buildSettingItem(Icons.settings_outlined, "Pengaturan Aplikasi"),
+          _buildSettingItem(
+            Icons.settings_outlined,
+            "Pengaturan Aplikasi",
+            onTap: () {
+              Navigator.pushNamed(context, '/settings');
+            },
+          ),
           const Divider(height: 1, indent: 50),
-          _buildSettingItem(Icons.shield_outlined, "Keamanan & Privasi"),
+          _buildSettingItem(
+            Icons.lock_outline,
+            "Ganti Kata Sandi",
+            onTap: () {
+              Navigator.pushNamed(context, '/change-password');
+            },
+          ),
+          const Divider(height: 1, indent: 50),
+          _buildSettingItem(
+            Icons.system_update_alt_rounded,
+            "Pembaruan Aplikasi",
+            onTap: () {
+              Navigator.pushNamed(context, '/app-updates');
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSettingItem(IconData icon, String title) {
+  Widget _buildSettingItem(IconData icon, String title, {VoidCallback? onTap}) {
     return ListTile(
       leading: Icon(icon, color: const Color(0xFF7463F0)),
       title: Text(
@@ -424,7 +449,7 @@ class _ProfilePageState extends State<ProfilePage> {
         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
       ),
       trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-      onTap: () {},
+      onTap: onTap ?? () {},
     );
   }
 
